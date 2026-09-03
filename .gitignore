@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+sportzfy-web/node_modules/
+SPORTZFY-main/node_modules/
+
+# Next.js build output
+.next/
+sportzfy-web/.next/
+out/
+sportzfy-web/out/
+
+# Environment files
+.env*.local
+.env
+sportzfy-web/.env
+sportzfy-web/.env*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS & Temp
+.DS_Store
+Thumbs.db
+.tmp/
+tmp/
+*.tmp
+
+# SQLite DB files if used locally
+*.db
+*.db-journal
+sportzfy-web/prisma/*.db
+sportzfy-web/prisma/*.db-journal
