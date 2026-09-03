@@ -1,0 +1,200 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  name         String
+  phone        String?
+  role         String        @default("CUSTOMER") // CUSTOMER, OWNER, ADMIN
+  avatarUrl    String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  profile      Profile?
+  turfs        Turf[]        @relation("OwnerTurfs")
+  holds        Hold[]
+  bookings     Booking[]
+  reviews      Review[]
+  matchPosts   MatchPost[]   @relation("HostMatches")
+  joinRequests JoinRequest[]
+}
+
+model Profile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio              String?
+  preferredFormat  String?  @default("7v7")
+  favoritePosition String?  @default("Goalkeeper")
+  preferredCity    String?  @default("Chattogram")
+}
+
+model Turf {
+  id                String             @id @default(cuid())
+  ownerId           String
+  owner             User               @relation("OwnerTurfs", fields: [ownerId], references: [id])
+  name              String
+  slug              String             @unique
+  city              String             // Chattogram, Dhaka
+  area              String             // Halishahar, Kazir Dewri, Chandgaon, Dhanmondi
+  address           String
+  description       String
+  pitchFormats      String             // "5v5, 6v6, 7v7"
+  basePricePerHour  Float              // in BDT (৳)
+  rating            Float              @default(4.8)
+  reviewCount       Int                @default(0)
+  status            String             @default("APPROVED") // DRAFT, PENDING_REVIEW, APPROVED, REJECTED, INACTIVE
+  coverImage        String
+  hasFloodlights    Boolean            @default(true)
+  hasWashroom       Boolean            @default(true)
+  hasChangingRoom   Boolean            @default(true)
+  hasParking        Boolean            @default(true)
+  hasWater          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  images            TurfImage[]
+  availabilityRules AvailabilityRule[]
+  blockedIntervals  BlockedInterval[]
+  holds             Hold[]
+  bookings          Booking[]
+  reviews           Review[]
+  matchPosts        MatchPost[]
+}
+
+model TurfImage {
+  id        String   @id @default(cuid())
+  turfId    String
+  turf      Turf     @relation(fields: [turfId], references: [id], onDelete: Cascade)
+  url       String
+  caption   String?
+  order     Int      @default(0)
+}
+
+model AvailabilityRule {
+  id         String   @id @default(cuid())
+  turfId     String
+  turf       Turf     @relation(fields: [turfId], references: [id], onDelete: Cascade)
+  dayOfWeek  Int      // 0 = Sunday, 1 = Monday, ..., 5 = Friday, 6 = Saturday
+  openHour   Int      // e.g. 16 (4:00 PM)
+  closeHour  Int      // e.g. 25 (1:00 AM next day)
+  hourlyRate Float
+}
+
+model BlockedInterval {
+  id        String   @id @default(cuid())
+  turfId    String
+  turf      Turf     @relation(fields: [turfId], references: [id], onDelete: Cascade)
+  startTime DateTime
+  endTime   DateTime
+  reason    String   // "Walk-in booking", "Maintenance", "Private tournament"
+  createdAt DateTime @default(now())
+}
+
+model Hold {
+  id         String    @id @default(cuid())
+  turfId     String
+  turf       Turf      @relation(fields: [turfId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  startTime  DateTime
+  endTime    DateTime
+  price      Float
+  expiresAt  DateTime  // Server-authoritative 5-minute expiry
+  status     String    @default("ACTIVE") // ACTIVE, CONSUMED, EXPIRED, RELEASED
+  createdAt  DateTime  @default(now())
+
+  booking    Booking?
+}
+
+model Booking {
+  id             String           @id @default(cuid())
+  referenceCode  String           @unique // e.g. SPZ-2026-9812
+  turfId         String
+  turf           Turf             @relation(fields: [turfId], references: [id])
+  userId         String
+  user           User             @relation(fields: [userId], references: [id])
+  holdId         String?          @unique
+  hold           Hold?            @relation(fields: [holdId], references: [id])
+  startTime      DateTime
+  endTime        DateTime
+  totalAmount    Float
+  status         String           @default("CONFIRMED") // PENDING_PAYMENT, CONFIRMED, COMPLETED, CANCELLED
+  paymentMethod  String           @default("BKASH") // BKASH, NAGAD, ROCKET
+  transactionId  String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  paymentAttempts PaymentAttempt[]
+  matchPost       MatchPost?
+  review          Review?
+}
+
+model PaymentAttempt {
+  id             String   @id @default(cuid())
+  bookingId      String?
+  booking        Booking? @relation(fields: [bookingId], references: [id])
+  holdId         String?
+  provider       String   // BKASH, NAGAD, ROCKET
+  accountNumber  String
+  amount         Float
+  status         String   @default("PENDING") // PENDING, SUCCEEDED, FAILED
+  idempotencyKey String   @unique
+  createdAt      DateTime @default(now())
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  turfId    String
+  turf      Turf     @relation(fields: [turfId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  bookingId String?  @unique
+  booking   Booking? @relation(fields: [bookingId], references: [id])
+  rating    Int      @default(5) // 1 to 5 stars
+  comment   String
+  createdAt DateTime @default(now())
+}
+
+model MatchPost {
+  id            String        @id @default(cuid())
+  turfId        String
+  turf          Turf          @relation(fields: [turfId], references: [id])
+  hostUserId    String
+  hostUser      User          @relation("HostMatches", fields: [hostUserId], references: [id])
+  bookingId     String?       @unique
+  booking       Booking?      @relation(fields: [bookingId], references: [id])
+  title         String
+  description   String
+  sportFormat   String        @default("7v7") // 5v5, 6v6, 7v7
+  matchTime     DateTime
+  area          String
+  totalSpots    Int           @default(14)
+  openSpots     Int           @default(2)
+  costPerPlayer Float         @default(200) // ৳ BDT split
+  requiredRole  String        @default("Goalkeeper") // Goalkeeper, Striker, Any
+  status        String        @default("OPEN") // OPEN, FULL, CLOSED
+  createdAt     DateTime      @default(now())
+
+  joinRequests  JoinRequest[]
+}
+
+model JoinRequest {
+  id            String    @id @default(cuid())
+  matchPostId   String
+  matchPost     MatchPost @relation(fields: [matchPostId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  preferredRole String?   @default("Goalkeeper")
+  status        String    @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  createdAt     DateTime  @default(now())
+
+  @@unique([matchPostId, userId])
+}
