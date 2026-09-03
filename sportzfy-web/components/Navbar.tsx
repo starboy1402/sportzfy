@@ -86,8 +86,10 @@ export default function Navbar() {
                   Explore Turfs
                 </Link>
                 <Link
-                  href="/#matches"
-                  className="text-sm font-semibold text-[var(--color-ink-muted)] hover:text-[var(--color-forest)] transition-colors flex items-center gap-1.5"
+                  href="/matches"
+                  className={`text-sm font-semibold transition-colors flex items-center gap-1.5 ${
+                    pathname === "/matches" ? "text-[var(--color-field)] font-bold" : "text-[var(--color-ink-muted)] hover:text-[var(--color-forest)]"
+                  }`}
                 >
                   <Trophy className="w-4 h-4 text-[var(--color-accent)]" />
                   Open Matches
