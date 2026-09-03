@@ -25,6 +25,7 @@ async function main() {
       email: "player@sportzfy.com",
       name: "Sakib Alif",
       phone: "+8801812345678",
+      password: "sportzfy123",
       role: "CUSTOMER",
       avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
       profile: {
@@ -43,6 +44,7 @@ async function main() {
       email: "owner@sportzfy.com",
       name: "Tariqul Islam (Eco Sports)",
       phone: "+8801711223344",
+      password: "sportzfy123",
       role: "OWNER",
       avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80",
     },
@@ -53,6 +55,7 @@ async function main() {
       email: "admin@sportzfy.com",
       name: "Sportzfy Administrator",
       phone: "+8801999887766",
+      password: "sportzfy123",
       role: "ADMIN",
     },
   });

@@ -12,6 +12,7 @@ model User {
   email        String        @unique
   name         String
   phone        String?
+  password     String?
   role         String        @default("CUSTOMER") // CUSTOMER, OWNER, ADMIN
   avatarUrl    String?
   createdAt    DateTime      @default(now())
