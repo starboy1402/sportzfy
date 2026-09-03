@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 import QRCode from "qrcode";
+
+const ALLOWED_PAYMENT_METHODS = ["BKASH", "NAGAD", "ROCKET", "CARD"];
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,6 +14,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: { code: "BAD_REQUEST", message: "Hold ID is required to confirm booking." } },
         { status: 400 }
+      );
+    }
+
+    if (!ALLOWED_PAYMENT_METHODS.includes(paymentMethod)) {
+      return NextResponse.json(
+        { error: { code: "INVALID_PAYMENT", message: "Unsupported payment method selected." } },
+        { status: 400 }
+      );
+    }
+
+    // Require authenticated user
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "UNAUTHORIZED",
+            message: "Authentication required. Please log in to confirm your booking.",
+          },
+        },
+        { status: 401 }
       );
     }
 
@@ -25,6 +49,11 @@ export async function POST(request: NextRequest) {
 
       if (!hold) {
         throw new Error("HOLD_NOT_FOUND");
+      }
+
+      // Security: Ensure confirming player is the one who acquired the hold (or admin)
+      if (hold.userId !== currentUser.id && currentUser.role !== "ADMIN") {
+        throw new Error("UNAUTHORIZED_HOLD_ACCESS");
       }
 
       if (hold.status !== "ACTIVE" || hold.expiresAt <= now) {
@@ -133,6 +162,17 @@ export async function POST(request: NextRequest) {
           },
         },
         { status: 410 }
+      );
+    }
+    if (err.message === "UNAUTHORIZED_HOLD_ACCESS") {
+      return NextResponse.json(
+        {
+          error: {
+            code: "FORBIDDEN",
+            message: "Unauthorized. You cannot confirm a booking for a hold belonging to another user.",
+          },
+        },
+        { status: 403 }
       );
     }
 

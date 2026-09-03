@@ -1,44 +1,15 @@
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 
-export interface SessionUser {
-  id: string;
-  email: string;
-  name: string;
-  role: "CUSTOMER" | "OWNER" | "ADMIN";
-  phone?: string | null;
-  avatarUrl?: string | null;
-}
+import {
+  SessionUser,
+  SESSION_COOKIE_NAME,
+  encodeSession,
+  decodeSession,
+} from "./session-token";
 
-const SESSION_COOKIE_NAME = "sportzfy_session";
-
-// Encode user payload into a secure base64 token
-export function encodeSession(user: SessionUser): string {
-  const payload = {
-    ...user,
-    timestamp: Date.now(),
-  };
-  return Buffer.from(JSON.stringify(payload)).toString("base64");
-}
-
-// Decode and verify session token
-export function decodeSession(token: string): SessionUser | null {
-  try {
-    const raw = Buffer.from(token, "base64").toString("utf-8");
-    const parsed = JSON.parse(raw);
-    if (!parsed.id || !parsed.email || !parsed.role) return null;
-    return {
-      id: parsed.id,
-      email: parsed.email,
-      name: parsed.name,
-      role: parsed.role,
-      phone: parsed.phone,
-      avatarUrl: parsed.avatarUrl,
-    };
-  } catch {
-    return null;
-  }
-}
+export type { SessionUser };
+export { SESSION_COOKIE_NAME, encodeSession, decodeSession };
 
 // Server helper to get current logged-in user from cookies
 export async function getCurrentUser(): Promise<SessionUser | null> {
@@ -73,5 +44,3 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     avatarUrl: dbUser.avatarUrl,
   };
 }
-
-export { SESSION_COOKIE_NAME };

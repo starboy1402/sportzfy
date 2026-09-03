@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || currentUser.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: { code: "FORBIDDEN", message: "Platform administrator access required." } },
+        { status: 403 }
+      );
+    }
     const { id } = await params;
     const body = await request.json();
     const { status } = body;

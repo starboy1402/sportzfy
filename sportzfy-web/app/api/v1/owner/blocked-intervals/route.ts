@@ -25,8 +25,18 @@ export async function GET(request: NextRequest) {
   }
 }
 
+import { getCurrentUser } from "@/lib/auth";
+
 export async function POST(request: NextRequest) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || (currentUser.role !== "OWNER" && currentUser.role !== "ADMIN")) {
+      return NextResponse.json(
+        { error: { code: "FORBIDDEN", message: "Turf owner or administrator access required." } },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { turfId, startTime, endTime, reason = "Walk-in reservation" } = body;
 
@@ -35,6 +45,20 @@ export async function POST(request: NextRequest) {
         { error: { code: "BAD_REQUEST", message: "Missing required slot interval parameters." } },
         { status: 400 }
       );
+    }
+
+    // Verify turf ownership
+    if (currentUser.role === "OWNER") {
+      const turf = await prisma.turf.findUnique({
+        where: { id: turfId },
+        select: { ownerId: true },
+      });
+      if (!turf || turf.ownerId !== currentUser.id) {
+        return NextResponse.json(
+          { error: { code: "FORBIDDEN", message: "You can only block intervals for your own venues." } },
+          { status: 403 }
+        );
+      }
     }
 
     const slotStart = new Date(startTime);
@@ -86,6 +110,14 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || (currentUser.role !== "OWNER" && currentUser.role !== "ADMIN")) {
+      return NextResponse.json(
+        { error: { code: "FORBIDDEN", message: "Turf owner or administrator access required." } },
+        { status: 403 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
@@ -94,6 +126,20 @@ export async function DELETE(request: NextRequest) {
         { error: { code: "BAD_REQUEST", message: "ID is required to unblock slot." } },
         { status: 400 }
       );
+    }
+
+    // Verify ownership
+    if (currentUser.role === "OWNER") {
+      const interval = await prisma.blockedInterval.findUnique({
+        where: { id },
+        include: { turf: { select: { ownerId: true } } },
+      });
+      if (!interval || interval.turf.ownerId !== currentUser.id) {
+        return NextResponse.json(
+          { error: { code: "FORBIDDEN", message: "You can only unblock intervals for your own venues." } },
+          { status: 403 }
+        );
+      }
     }
 
     await prisma.blockedInterval.delete({

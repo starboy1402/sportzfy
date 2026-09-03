@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function POST(
   request: NextRequest,
@@ -28,27 +29,29 @@ export async function POST(
       );
     }
 
-    // Identify or create joining player (Ayan Barua or Mahmudul Hasan from team)
-    let player = await prisma.user.findFirst({
-      where: { email: "ayan@sportzfy.com" },
-    });
+    // Require authenticated player
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: { code: "UNAUTHORIZED", message: "Please log in to submit a squad join request." } },
+        { status: 401 }
+      );
+    }
 
+    // Prevent match host from requesting to join their own match
+    if (match.hostUserId === currentUser.id) {
+      return NextResponse.json(
+        { error: { code: "HOST_CANNOT_JOIN", message: "You are the captain of this match and already in the squad." } },
+        { status: 400 }
+      );
+    }
+
+    const player = await prisma.user.findUnique({ where: { id: currentUser.id } });
     if (!player) {
-      player = await prisma.user.create({
-        data: {
-          email: "ayan@sportzfy.com",
-          name: "Ayan Barua",
-          phone: "+8801700998877",
-          role: "CUSTOMER",
-          profile: {
-            create: {
-              bio: "Reliable goalkeeper with 3 years turf experience. Quick reflexes.",
-              favoritePosition: "Goalkeeper",
-              preferredCity: "Chattogram",
-            },
-          },
-        },
-      });
+      return NextResponse.json(
+        { error: { code: "USER_NOT_FOUND", message: "User account not found." } },
+        { status: 404 }
+      );
     }
 
     // Check duplicate request

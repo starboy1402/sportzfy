@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function GET(_request: NextRequest) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || currentUser.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: { code: "FORBIDDEN", message: "Platform administrator access required." } },
+        { status: 403 }
+      );
+    }
     const totalTurfs = await prisma.turf.count();
     const approvedTurfs = await prisma.turf.count({ where: { status: "APPROVED" } });
     const pendingTurfs = await prisma.turf.count({ where: { status: "PENDING_REVIEW" } });

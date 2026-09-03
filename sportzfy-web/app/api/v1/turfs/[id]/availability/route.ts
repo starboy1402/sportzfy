@@ -91,7 +91,9 @@ export async function GET(
       );
 
       let status = "AVAILABLE";
-      if (isBooked) {
+      if (slotStart <= now) {
+        status = "UNAVAILABLE"; // Cannot book slots in the past
+      } else if (isBooked) {
         status = "BOOKED";
       } else if (activeHold) {
         status = "HELD";

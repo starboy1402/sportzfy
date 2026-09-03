@@ -1,12 +1,17 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 import { Calendar, MapPin, Clock, ArrowRight, ShieldCheck, Ticket } from "lucide-react";
 
 export const revalidate = 0;
 
 export default async function BookingsPage() {
+  const currentUser = await getCurrentUser();
+  const where = currentUser && currentUser.role !== "ADMIN" ? { userId: currentUser.id } : {};
+
   const bookings = await prisma.booking.findMany({
+    where,
     include: {
       turf: true,
       user: true,

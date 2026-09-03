@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function GET(_request: NextRequest) {
   try {
-    const owner = await prisma.user.findFirst({
-      where: { role: "OWNER" },
-    });
-
-    if (!owner) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || (currentUser.role !== "OWNER" && currentUser.role !== "ADMIN")) {
       return NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "Owner profile not found." } },
-        { status: 404 }
+        { error: { code: "FORBIDDEN", message: "Turf owner or administrator access required." } },
+        { status: 403 }
       );
     }
 
+    const where = currentUser.role === "ADMIN" ? {} : { ownerId: currentUser.id };
+
     const turfs = await prisma.turf.findMany({
-      where: { ownerId: owner.id },
+      where,
       include: {
         bookings: { select: { id: true, totalAmount: true } },
         blockedIntervals: true,
@@ -35,6 +35,14 @@ export async function GET(_request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || (currentUser.role !== "OWNER" && currentUser.role !== "ADMIN")) {
+      return NextResponse.json(
+        { error: { code: "FORBIDDEN", message: "Only registered turf owners can list new venues." } },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const {
       name,
@@ -59,25 +67,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let owner = await prisma.user.findFirst({
-      where: { role: "OWNER" },
-    });
-
-    if (!owner) {
-      owner = await prisma.user.create({
-        data: {
-          email: "owner@sportzfy.com",
-          name: "Tariqul Islam (Eco Sports)",
-          role: "OWNER",
-        },
-      });
-    }
-
     const slug = `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now().toString().slice(-4)}`;
 
     const newTurf = await prisma.turf.create({
       data: {
-        ownerId: owner.id,
+        ownerId: currentUser.id,
         name,
         slug,
         city,

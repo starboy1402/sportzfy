@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; requestId: string }> }
 ) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: { code: "UNAUTHORIZED", message: "Authentication required to manage squad." } },
+        { status: 401 }
+      );
+    }
+
     const { id, requestId } = await params;
     const body = await request.json();
     const { decision } = body; // "ACCEPTED" | "REJECTED"
@@ -27,6 +36,16 @@ export async function POST(
         throw new Error("REQUEST_NOT_FOUND");
       }
 
+      // Security: Only the match host or admin can make roster decisions
+      if (joinReq.matchPost.hostUserId !== currentUser.id && currentUser.role !== "ADMIN") {
+        throw new Error("FORBIDDEN_HOST_ONLY");
+      }
+
+      // If already decided as requested, return existing state (idempotency)
+      if (joinReq.status === decision) {
+        return joinReq;
+      }
+
       if (decision === "ACCEPTED" && joinReq.matchPost.openSpots <= 0) {
         throw new Error("MATCH_FULL");
       }
@@ -38,8 +57,8 @@ export async function POST(
         include: { user: { select: { name: true, phone: true } } },
       });
 
-      // If accepted, decrement open spots
-      if (decision === "ACCEPTED") {
+      // If accepted from PENDING, decrement open spots atomically
+      if (decision === "ACCEPTED" && joinReq.status === "PENDING") {
         const newOpenSpots = Math.max(0, joinReq.matchPost.openSpots - 1);
         await tx.matchPost.update({
           where: { id },
@@ -72,6 +91,12 @@ export async function POST(
       return NextResponse.json(
         { error: { code: "MATCH_FULL", message: "Match roster is already full." } },
         { status: 400 }
+      );
+    }
+    if (err.message === "FORBIDDEN_HOST_ONLY") {
+      return NextResponse.json(
+        { error: { code: "FORBIDDEN", message: "Only the match captain or platform administrator can manage squad requests." } },
+        { status: 403 }
       );
     }
 

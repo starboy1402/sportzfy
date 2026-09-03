@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function GET(_request: NextRequest) {
   try {
-    // Fetch owner user or first owner
+    const currentUser = await getCurrentUser();
+    const ownerWhere = currentUser && currentUser.role === "OWNER"
+      ? { id: currentUser.id }
+      : { role: "OWNER" };
+
+    // Fetch authenticated owner user or first owner for demo
     const owner = await prisma.user.findFirst({
-      where: { role: "OWNER" },
+      where: ownerWhere,
       include: {
         turfs: {
           include: {

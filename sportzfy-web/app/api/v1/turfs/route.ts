@@ -24,14 +24,16 @@ export async function GET(request: NextRequest) {
     if (format && format !== "All") {
       where.pitchFormats = {
         contains: format,
+        mode: "insensitive",
       };
     }
 
     if (query) {
       where.OR = [
-        { name: { contains: query } },
-        { area: { contains: query } },
-        { address: { contains: query } },
+        { name: { contains: query, mode: "insensitive" } },
+        { area: { contains: query, mode: "insensitive" } },
+        { address: { contains: query, mode: "insensitive" } },
+        { city: { contains: query, mode: "insensitive" } },
       ];
     }
 

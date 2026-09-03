@@ -64,8 +64,18 @@ export async function GET(request: NextRequest) {
   }
 }
 
+import { getCurrentUser } from "@/lib/auth";
+
 export async function POST(request: NextRequest) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: { code: "UNAUTHORIZED", message: "Please log in to host a match recruitment challenge." } },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const {
       title,
@@ -87,37 +97,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Default host user (Sakib Alif or first player)
-    let host = await prisma.user.findFirst({
-      where: { role: "CUSTOMER" },
-    });
+    const mDate = new Date(matchTime);
+    if (isNaN(mDate.getTime()) || mDate <= new Date()) {
+      return NextResponse.json(
+        { error: { code: "INVALID_MATCH_TIME", message: "Match must be scheduled for a future date and time." } },
+        { status: 400 }
+      );
+    }
 
-    if (!host) {
-      host = await prisma.user.create({
-        data: {
-          email: "player@sportzfy.com",
-          name: "Sakib Alif",
-          role: "CUSTOMER",
-        },
-      });
+    const tSpots = Number(totalSpots);
+    const oSpots = Number(openSpots);
+    if (isNaN(tSpots) || isNaN(oSpots) || oSpots <= 0 || oSpots > tSpots) {
+      return NextResponse.json(
+        { error: { code: "INVALID_SPOTS", message: "Open spots must be at least 1 and cannot exceed total spots." } },
+        { status: 400 }
+      );
+    }
+
+    const cost = Number(costPerPlayer);
+    if (isNaN(cost) || cost < 0) {
+      return NextResponse.json(
+        { error: { code: "INVALID_COST", message: "Cost per player cannot be negative." } },
+        { status: 400 }
+      );
     }
 
     const turf = await prisma.turf.findUnique({
       where: { id: turfId },
     });
 
+    if (!turf) {
+      return NextResponse.json(
+        { error: { code: "NOT_FOUND", message: "Target turf venue not found." } },
+        { status: 404 }
+      );
+    }
+
     const matchPost = await prisma.matchPost.create({
       data: {
-        hostUserId: host.id,
+        hostUserId: currentUser.id,
         turfId,
         title,
         description: description || "Casual friendly match. Looking for reliable squad members.",
         sportFormat,
-        matchTime: new Date(matchTime),
-        area: area || `${turf?.area || "Chattogram"}, Bangladesh`,
-        totalSpots: Number(totalSpots),
-        openSpots: Number(openSpots),
-        costPerPlayer: Number(costPerPlayer),
+        matchTime: mDate,
+        area: area || `${turf.area}, ${turf.city}`,
+        totalSpots: tSpots,
+        openSpots: oSpots,
+        costPerPlayer: cost,
         requiredRole,
         status: "OPEN",
       },

@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
+import { calculateSlotPrice, validateSlotTimes } from "@/lib/pricing";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { turfId, startTime, endTime, price } = body;
+    const { turfId, startTime, endTime } = body;
 
-    if (!turfId || !startTime || !endTime || price === undefined) {
+    if (!turfId || !startTime || !endTime) {
       return NextResponse.json(
-        { error: { code: "BAD_REQUEST", message: "Missing required booking slot details." } },
+        { error: { code: "BAD_REQUEST", message: "Missing required booking slot parameters." } },
         { status: 400 }
       );
     }
@@ -17,23 +19,48 @@ export async function POST(request: NextRequest) {
     const slotEnd = new Date(endTime);
     const now = new Date();
 
-    // Fetch synthetic player user (Sakib Alif from seed) or create if not present
-    let player = await prisma.user.findFirst({
-      where: { role: "CUSTOMER" },
-    });
+    // Validate slot time boundaries (no past slots, within 14 days, valid interval)
+    const slotValidation = validateSlotTimes(slotStart, slotEnd, now);
+    if (!slotValidation.valid) {
+      return NextResponse.json(
+        { error: { code: slotValidation.errorCode, message: slotValidation.errorMessage } },
+        { status: 400 }
+      );
+    }
+
+    // Require authenticated session
+    const currentUser = await getCurrentUser();
+    let player = currentUser
+      ? await prisma.user.findUnique({ where: { id: currentUser.id } })
+      : null;
 
     if (!player) {
-      player = await prisma.user.create({
-        data: {
-          email: "player@sportzfy.com",
-          name: "Sakib Alif",
-          role: "CUSTOMER",
+      return NextResponse.json(
+        {
+          error: {
+            code: "UNAUTHORIZED",
+            message: "Authentication required. Please log in to your Sportzfy account to reserve a pitch.",
+          },
         },
-      });
+        { status: 401 }
+      );
     }
 
     // Atomic Transaction for hold acquisition
     const hold = await prisma.$transaction(async (tx) => {
+      // 0. Verify turf exists & fetch authentic base rate
+      const turf = await tx.turf.findUnique({
+        where: { id: turfId },
+        select: { id: true, basePricePerHour: true, name: true },
+      });
+
+      if (!turf) {
+        throw new Error("TURF_NOT_FOUND");
+      }
+
+      // Compute tamper-proof authentic price server-side
+      const authenticPrice = calculateSlotPrice(turf.basePricePerHour, slotStart);
+
       // 1. Check for overlapping confirmed booking
       const conflictingBooking = await tx.booking.findFirst({
         where: {
@@ -63,7 +90,7 @@ export async function POST(request: NextRequest) {
         throw new Error("SLOT_HELD_BY_ANOTHER");
       }
 
-      // 3. Check for blocked intervals
+      // 3. Check for blocked intervals (walk-ins / maintenance)
       const blocked = await tx.blockedInterval.findFirst({
         where: {
           turfId,
@@ -85,7 +112,7 @@ export async function POST(request: NextRequest) {
           userId: player.id,
           startTime: slotStart,
           endTime: slotEnd,
-          price: Number(price),
+          price: authenticPrice, // Server-calculated price
           expiresAt,
           status: "ACTIVE",
         },
@@ -99,6 +126,13 @@ export async function POST(request: NextRequest) {
               coverImage: true,
             },
           },
+          user: {
+            select: {
+              name: true,
+              email: true,
+              phone: true,
+            },
+          },
         },
       });
 
@@ -108,27 +142,62 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         data: hold,
-        message: "Slot held successfully for 5 minutes.",
+        message: "Slot hold acquired successfully. You have 5 minutes to complete payment.",
       },
       { status: 201 }
     );
-  } catch (error: unknown) {
-    const err = error as Error;
-    if (err.message === "SLOT_ALREADY_BOOKED" || err.message === "SLOT_HELD_BY_ANOTHER" || err.message === "SLOT_BLOCKED") {
+  } catch (error: any) {
+    if (error.message === "TURF_NOT_FOUND") {
+      return NextResponse.json(
+        { error: { code: "NOT_FOUND", message: "Turf venue not found." } },
+        { status: 404 }
+      );
+    }
+
+    if (error.message === "SLOT_ALREADY_BOOKED") {
       return NextResponse.json(
         {
           error: {
-            code: "SLOT_CONFLICT",
-            message: "This slot is no longer available. Another player has reserved or held it.",
+            code: "SLOT_ALREADY_BOOKED",
+            message: "This slot has already been booked by another team.",
           },
         },
         { status: 409 }
       );
     }
 
-    console.error("Hold acquisition error:", error);
+    if (error.message === "SLOT_HELD_BY_ANOTHER") {
+      return NextResponse.json(
+        {
+          error: {
+            code: "SLOT_HELD_BY_ANOTHER",
+            message: "Another user is currently checking out this slot. It will become available if they do not complete payment within 5 minutes.",
+          },
+        },
+        { status: 409 }
+      );
+    }
+
+    if (error.message === "SLOT_BLOCKED") {
+      return NextResponse.json(
+        {
+          error: {
+            code: "SLOT_BLOCKED",
+            message: "This slot has been locked for a walk-in match or pitch maintenance.",
+          },
+        },
+        { status: 409 }
+      );
+    }
+
+    console.error("Hold error:", error);
     return NextResponse.json(
-      { error: { code: "SERVER_ERROR", message: "Failed to acquire slot hold." } },
+      {
+        error: {
+          code: "SERVER_ERROR",
+          message: "Internal server error while holding slot.",
+        },
+      },
       { status: 500 }
     );
   }

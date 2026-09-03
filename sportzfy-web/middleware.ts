@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { verifyEdgeSession } from "@/lib/edge-auth";
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const sessionCookie = request.cookies.get("sportzfy_session")?.value;
 
@@ -20,28 +21,28 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Parse session cookie
-  try {
-    const raw = Buffer.from(sessionCookie, "base64").toString("utf-8");
-    const user = JSON.parse(raw);
+  // Cryptographically decode and verify session cookie via Web Crypto
+  const user = await verifyEdgeSession(sessionCookie);
 
-    // 1. Admin route protection: must have role ADMIN
-    if (isAdminRoute && user.role !== "ADMIN") {
-      const loginUrl = new URL(`/login?role=admin&unauthorized=true&redirect=${encodeURIComponent(pathname)}`, request.url);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    // 2. Owner route protection: must have role OWNER or ADMIN
-    if (isOwnerRoute && user.role !== "OWNER" && user.role !== "ADMIN") {
-      const loginUrl = new URL(`/login?role=owner&unauthorized=true&redirect=${encodeURIComponent(pathname)}`, request.url);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    return NextResponse.next();
-  } catch {
+  if (!user) {
+    // Tampered, expired, or invalid token
     const loginUrl = new URL(`/login?redirect=${encodeURIComponent(pathname)}`, request.url);
     return NextResponse.redirect(loginUrl);
   }
+
+  // 1. Admin route protection: must have role ADMIN
+  if (isAdminRoute && user.role !== "ADMIN") {
+    const loginUrl = new URL(`/login?role=admin&unauthorized=true&redirect=${encodeURIComponent(pathname)}`, request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // 2. Owner route protection: must have role OWNER or ADMIN
+  if (isOwnerRoute && user.role !== "OWNER" && user.role !== "ADMIN") {
+    const loginUrl = new URL(`/login?role=owner&unauthorized=true&redirect=${encodeURIComponent(pathname)}`, request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {

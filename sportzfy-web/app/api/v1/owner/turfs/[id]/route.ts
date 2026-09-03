@@ -33,12 +33,43 @@ export async function GET(
   }
 }
 
+import { getCurrentUser } from "@/lib/auth";
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || (currentUser.role !== "OWNER" && currentUser.role !== "ADMIN")) {
+      return NextResponse.json(
+        { error: { code: "FORBIDDEN", message: "Owner or administrator access required." } },
+        { status: 403 }
+      );
+    }
+
     const { id } = await params;
+
+    // Verify ownership
+    const existingTurf = await prisma.turf.findUnique({
+      where: { id },
+      select: { id: true, ownerId: true },
+    });
+
+    if (!existingTurf) {
+      return NextResponse.json(
+        { error: { code: "NOT_FOUND", message: "Venue not found." } },
+        { status: 404 }
+      );
+    }
+
+    if (currentUser.role === "OWNER" && existingTurf.ownerId !== currentUser.id) {
+      return NextResponse.json(
+        { error: { code: "FORBIDDEN", message: "You do not have permission to edit another owner's venue." } },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
 
     const updated = await prisma.turf.update({
