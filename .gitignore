@@ -34,3 +34,8 @@ tmp/
 *.db-journal
 sportzfy-web/prisma/*.db
 sportzfy-web/prisma/*.db-journal
+
+# IDE & Editor files
+.vscode/
+.idea/
+
