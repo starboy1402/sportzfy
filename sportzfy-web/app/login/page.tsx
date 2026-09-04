@@ -22,67 +22,60 @@ function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const initialRoleParam = searchParams.get("role");
   const redirectParam = searchParams.get("redirect") || "/";
+  const emailParam = searchParams.get("email") || "";
   const isUnauthorized = searchParams.get("unauthorized") === "true";
 
-  const [activeRole, setActiveRole] = useState<RoleType>(
-    initialRoleParam === "admin"
-      ? "ADMIN"
-      : initialRoleParam === "owner"
-      ? "OWNER"
-      : "CUSTOMER"
-  );
-
-  const [email, setEmail] = useState("player@sportzfy.com");
-  const [password, setPassword] = useState("sportzfy123");
+  const [email, setEmail] = useState(emailParam);
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(
     isUnauthorized ? "You must be signed in with the appropriate role to access that area." : null
   );
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
-  // Sync role tabs with presets
-  function handleRoleSwitch(role: RoleType) {
-    setActiveRole(role);
-    setErrorMessage(null);
-    if (role === "CUSTOMER") {
-      setEmail("player@sportzfy.com");
-      setPassword("sportzfy123");
-    } else if (role === "OWNER") {
-      setEmail("owner@sportzfy.com");
-      setPassword("sportzfy123");
-    } else if (role === "ADMIN") {
-      setEmail("admin@sportzfy.com");
-      setPassword("sportzfy123");
+  // Sync email param if URL changes
+  useEffect(() => {
+    if (emailParam && !email) {
+      setEmail(emailParam);
     }
+  }, [emailParam]);
+
+  // One-click demo account filler for quick testing
+  function handleFillDemo(demoEmail: string, demoLabel: string) {
+    setEmail(demoEmail);
+    setPassword("sportzfy123");
+    setErrorMessage(null);
+    setInfoMessage(`Filled demo credentials for ${demoLabel}`);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setErrorMessage(null);
+    setInfoMessage(null);
 
     try {
+      const cleanEmail = email.trim().toLowerCase();
       const res = await fetch("/api/v1/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email,
+          email: cleanEmail,
           password,
-          requestedRole: activeRole,
         }),
       });
 
       const json = await res.json();
 
       if (!res.ok) {
-        setErrorMessage(json.error?.message || "Invalid login credentials.");
+        setErrorMessage(json.error?.message || "Invalid email or password.");
         return;
       }
 
-      // Success! Route based on role or redirect parameter
+      // Success! Route based on user role or redirect parameter
       const userRole = json.data.user.role;
-      if (redirectParam && redirectParam !== "/") {
+      if (redirectParam && redirectParam !== "/" && redirectParam !== "/login") {
         router.push(redirectParam);
       } else if (userRole === "ADMIN") {
         router.push("/admin");
@@ -92,11 +85,10 @@ function LoginFormContent() {
         router.push("/");
       }
 
-      // Trigger a soft refresh to update Navbar
       router.refresh();
     } catch (err) {
       console.error(err);
-      setErrorMessage("Network error while authenticating.");
+      setErrorMessage("Network error while authenticating. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -113,50 +105,8 @@ function LoginFormContent() {
           SIGN IN TO SPORTZ<span className="text-[var(--color-field)]">FY</span>
         </h1>
         <p className="text-xs text-[var(--color-ink-muted)]">
-          Select your portal to manage turfs, book matches, or govern platform operations.
+          Access your player bookings, turf venue management, or platform operations.
         </p>
-      </div>
-
-      {/* Role Tabs */}
-      <div className="grid grid-cols-3 gap-2 p-1.5 rounded-2xl bg-white border border-[var(--color-card-border)] shadow-xs">
-        <button
-          type="button"
-          onClick={() => handleRoleSwitch("CUSTOMER")}
-          className={`py-2 px-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
-            activeRole === "CUSTOMER"
-              ? "bg-[var(--color-field)] text-white shadow-xs"
-              : "text-[var(--color-forest)] hover:bg-[var(--color-mint)]"
-          }`}
-        >
-          <User className="w-3.5 h-3.5" />
-          <span>Player</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleRoleSwitch("OWNER")}
-          className={`py-2 px-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
-            activeRole === "OWNER"
-              ? "bg-[var(--color-forest)] text-white shadow-xs"
-              : "text-[var(--color-forest)] hover:bg-[var(--color-mint)]"
-          }`}
-        >
-          <Briefcase className="w-3.5 h-3.5" />
-          <span>Turf Owner</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleRoleSwitch("ADMIN")}
-          className={`py-2 px-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
-            activeRole === "ADMIN"
-              ? "bg-purple-700 text-white shadow-xs"
-              : "text-purple-800 hover:bg-purple-50"
-          }`}
-        >
-          <Sliders className="w-3.5 h-3.5" />
-          <span>Admin</span>
-        </button>
       </div>
 
       {/* Error Banner */}
@@ -164,6 +114,14 @@ function LoginFormContent() {
         <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {/* Info Banner */}
+      {infoMessage && (
+        <div className="p-3 rounded-2xl bg-[var(--color-mint)] border border-[var(--color-field)]/30 text-[var(--color-forest)] text-xs font-bold flex items-center gap-2">
+          <CheckCircle className="w-4 h-4 shrink-0 text-[var(--color-field)]" />
+          <span>{infoMessage}</span>
         </div>
       )}
 
@@ -178,6 +136,7 @@ function LoginFormContent() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            placeholder="e.g. yourname@example.com"
             className="w-full px-4 py-3 rounded-xl border border-[var(--color-card-border)] font-semibold text-xs bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
           />
         </div>
@@ -187,13 +146,13 @@ function LoginFormContent() {
             <label className="text-xs font-bold text-[var(--color-forest)]">
               Password:
             </label>
-            <span className="text-[10px] text-[var(--color-ink-muted)]">Demo: sportzfy123</span>
           </div>
           <input
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter your password"
             className="w-full px-4 py-3 rounded-xl border border-[var(--color-card-border)] font-mono text-xs bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
           />
         </div>
@@ -201,36 +160,36 @@ function LoginFormContent() {
         <button
           type="submit"
           disabled={loading}
-          className="btn-press w-full py-3.5 rounded-2xl bg-[var(--color-field)] hover:bg-[var(--color-field-hover)] text-white font-bold text-xs tracking-wider uppercase shadow-md flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
+          className="btn-press w-full py-3.5 rounded-2xl bg-[var(--color-field)] hover:bg-[var(--color-field-hover)] text-white font-bold text-xs tracking-wider uppercase shadow-md flex items-center justify-center gap-2 mt-2 disabled:opacity-50 cursor-pointer"
         >
-          <span>{loading ? "Authenticating..." : `Sign In as ${activeRole}`}</span>
+          <span>{loading ? "Authenticating..." : "Sign In →"}</span>
           <ArrowRight className="w-4 h-4" />
         </button>
 
         {/* 1-Click Fast Switch Demo Buttons */}
         <div className="pt-4 border-t border-[var(--color-card-border)] space-y-2">
           <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)] block text-center">
-            ⚡ 1-Click Evaluator Demo Sign-In
+            ⚡ Quick Demo Accounts (1-Click Fill)
           </span>
           <div className="grid grid-cols-3 gap-2 text-[11px]">
             <button
               type="button"
-              onClick={() => handleRoleSwitch("CUSTOMER")}
-              className="p-2 rounded-xl bg-[var(--color-mint)] border border-[var(--color-card-border)] font-bold text-[var(--color-forest)] hover:border-[var(--color-field)] text-center cursor-pointer"
+              onClick={() => handleFillDemo("player@sportzfy.com", "Demo Player (Sakib)")}
+              className="p-2 rounded-xl bg-[var(--color-mint)] border border-[var(--color-card-border)] font-bold text-[var(--color-forest)] hover:border-[var(--color-field)] text-center cursor-pointer transition-all"
             >
               ⚽ Player
             </button>
             <button
               type="button"
-              onClick={() => handleRoleSwitch("OWNER")}
-              className="p-2 rounded-xl bg-[var(--color-mint)] border border-[var(--color-card-border)] font-bold text-[var(--color-forest)] hover:border-[var(--color-field)] text-center cursor-pointer"
+              onClick={() => handleFillDemo("owner@sportzfy.com", "Demo Owner (Tariqul)")}
+              className="p-2 rounded-xl bg-[var(--color-mint)] border border-[var(--color-card-border)] font-bold text-[var(--color-forest)] hover:border-[var(--color-field)] text-center cursor-pointer transition-all"
             >
               🏟️ Owner
             </button>
             <button
               type="button"
-              onClick={() => handleRoleSwitch("ADMIN")}
-              className="p-2 rounded-xl bg-purple-50 border border-purple-200 font-bold text-purple-800 hover:border-purple-400 text-center cursor-pointer"
+              onClick={() => handleFillDemo("admin@sportzfy.com", "Demo Admin")}
+              className="p-2 rounded-xl bg-purple-50 border border-purple-200 font-bold text-purple-800 hover:border-purple-400 text-center cursor-pointer transition-all"
             >
               🛡️ Admin
             </button>

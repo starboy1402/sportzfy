@@ -23,20 +23,29 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [existingAccountEmail, setExistingAccountEmail] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setErrorMessage(null);
+    setExistingAccountEmail(null);
+
+    const cleanEmail = email.trim().toLowerCase();
+    if (password.length < 6) {
+      setErrorMessage("Password must be at least 6 characters long.");
+      setLoading(false);
+      return;
+    }
 
     try {
       const res = await fetch("/api/v1/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
-          email,
-          phone,
+          name: name.trim(),
+          email: cleanEmail,
+          phone: phone.trim() || null,
           password,
           role,
         }),
@@ -45,7 +54,12 @@ export default function RegisterPage() {
       const json = await res.json();
 
       if (!res.ok) {
-        setErrorMessage(json.error?.message || "Failed to register account.");
+        if (json.error?.code === "CONFLICT") {
+          setErrorMessage("An account with this email already exists.");
+          setExistingAccountEmail(cleanEmail);
+        } else {
+          setErrorMessage(json.error?.message || "Failed to register account.");
+        }
         return;
       }
 
@@ -123,9 +137,22 @@ export default function RegisterPage() {
         </div>
 
         {errorMessage && (
-          <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{errorMessage}</span>
+          <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold space-y-2">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+            {existingAccountEmail && (
+              <div className="pt-2 border-t border-red-200/60 flex items-center justify-between">
+                <span className="text-[11px] text-red-800">Already have an account?</span>
+                <Link
+                  href={`/login?email=${encodeURIComponent(existingAccountEmail)}`}
+                  className="px-3 py-1.5 rounded-xl bg-[var(--color-field)] text-white font-bold text-xs hover:bg-[var(--color-field-hover)] inline-flex items-center gap-1 shadow-xs"
+                >
+                  <span>Sign In now →</span>
+                </Link>
+              </div>
+            )}
           </div>
         )}
 
