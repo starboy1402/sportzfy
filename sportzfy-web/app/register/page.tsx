@@ -69,8 +69,9 @@ export default function RegisterPage() {
     <div className="min-h-screen flex flex-col bg-[var(--color-paper)] pb-20">
       <Navbar />
 
-      <main className="flex-1 flex items-center justify-center max-w-md mx-auto px-4 pt-8 sm:pt-12 w-full space-y-6">
-        <div className="text-center space-y-2">
+      <main className="flex-1 flex items-center justify-center px-4 py-8 sm:py-12">
+        <div className="max-w-md w-full space-y-6">
+          <div className="text-center space-y-2">
           <div className="w-12 h-12 rounded-2xl bg-[var(--color-forest)] flex items-center justify-center text-white mx-auto shadow-md">
             <Shield className="w-7 h-7 text-[var(--color-field)] fill-[var(--color-field)]" />
           </div>
@@ -200,7 +201,8 @@ export default function RegisterPage() {
             Sign In here →
           </Link>
         </div>
-      </main>
-    </div>
-  );
+      </div>
+    </main>
+  </div>
+);
 }
