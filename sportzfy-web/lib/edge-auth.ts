@@ -40,6 +40,17 @@ export async function verifyEdgeSession(token: string): Promise<EdgeSessionUser 
     // Decode Base64 in Edge (atob)
     const rawJson = atob(payloadBase64);
     const parsed = JSON.parse(rawJson);
+
+    // TTL Expiration Check: Tokens older than 7 days are invalid
+    const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+    if (
+      typeof parsed.timestamp !== "number" ||
+      Date.now() - parsed.timestamp > MAX_AGE_MS ||
+      parsed.timestamp > Date.now() + 60000
+    ) {
+      return null;
+    }
+
     if (!parsed.id || !parsed.email || !parsed.role) return null;
 
     return {

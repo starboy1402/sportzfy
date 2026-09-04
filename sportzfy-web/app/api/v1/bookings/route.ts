@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import QRCode from "qrcode";
@@ -60,9 +61,10 @@ export async function POST(request: NextRequest) {
         throw new Error("HOLD_EXPIRED");
       }
 
-      // 2. Generate unique match ticket reference
-      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-      const referenceCode = `SPZ-2026-${randomSuffix}`;
+      // 2. Generate unique collision-resistant match ticket reference (CSPRNG)
+      const timePart = Date.now().toString(36).toUpperCase();
+      const randHex = crypto.randomBytes(4).toString("hex").toUpperCase();
+      const referenceCode = `SPZ-2026-${timePart}-${randHex}`;
       const generatedTxId = transactionId || `TXN${Date.now().toString().slice(-8)}`;
 
       // 3. Create confirmed booking

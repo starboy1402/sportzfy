@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
@@ -10,7 +11,11 @@ export const revalidate = 0;
 
 export default async function BookingsPage() {
   const currentUser = await getCurrentUser();
-  const where = currentUser && currentUser.role !== "ADMIN" ? { userId: currentUser.id } : {};
+  if (!currentUser) {
+    redirect("/login?redirect=/bookings");
+  }
+
+  const where = currentUser.role === "ADMIN" ? {} : { userId: currentUser.id };
 
   const bookings = await prisma.booking.findMany({
     where,

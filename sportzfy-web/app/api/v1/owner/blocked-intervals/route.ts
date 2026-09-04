@@ -1,12 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: { code: "UNAUTHORIZED", message: "Authentication required to view blocked intervals." } },
+        { status: 401 }
+      );
+    }
+
+    if (currentUser.role !== "OWNER" && currentUser.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: { code: "FORBIDDEN", message: "Turf owner or administrator access required." } },
+        { status: 403 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const turfId = searchParams.get("turfId");
 
-    const where = turfId ? { turfId } : {};
+    const where: any = {};
+    if (currentUser.role === "OWNER") {
+      where.turf = { ownerId: currentUser.id };
+    }
+    if (turfId) {
+      where.turfId = turfId;
+    }
+
     const intervals = await prisma.blockedInterval.findMany({
       where,
       include: {
@@ -24,8 +47,6 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
-import { getCurrentUser } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -80,6 +101,29 @@ export async function POST(request: NextRequest) {
           error: {
             code: "BOOKING_EXISTS",
             message: "Cannot block slot: an online player has already confirmed a booking for this interval.",
+          },
+        },
+        { status: 409 }
+      );
+    }
+
+    // Check if slot currently has an active customer checkout hold
+    const conflictingHold = await prisma.hold.findFirst({
+      where: {
+        turfId,
+        status: "ACTIVE",
+        expiresAt: { gt: new Date() },
+        startTime: { lt: slotEnd },
+        endTime: { gt: slotStart },
+      },
+    });
+
+    if (conflictingHold) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "HOLD_ACTIVE",
+            message: "Cannot block slot: a customer is currently in checkout for this slot (5-minute hold active). Please wait for the hold to conclude or expire.",
           },
         },
         { status: 409 }

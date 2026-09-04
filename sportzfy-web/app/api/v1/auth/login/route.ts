@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import crypto from "crypto";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { encodeSession, SESSION_COOKIE_NAME, SessionUser } from "@/lib/auth";
 
@@ -26,17 +28,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Password validation (accepts matching password or default demo password 'sportzfy123')
-    const isValidPassword =
-      user.password === password ||
-      password === "sportzfy123" ||
-      (!user.password && password === "sportzfy123");
+    // Verify user password using bcrypt or constant-time comparison
+    let isValidPassword = false;
+    let shouldMigrateToHash = false;
+
+    if (user.password) {
+      const isBcryptHash = user.password.startsWith("$2a$") || user.password.startsWith("$2b$");
+      if (isBcryptHash) {
+        isValidPassword = await bcrypt.compare(password, user.password);
+      } else {
+        // Legacy plaintext verification using constant-time comparison (timing attack defense)
+        const userPassBuf = Buffer.from(user.password);
+        const inputPassBuf = Buffer.from(password);
+        if (
+          userPassBuf.length === inputPassBuf.length &&
+          crypto.timingSafeEqual(userPassBuf, inputPassBuf)
+        ) {
+          isValidPassword = true;
+          shouldMigrateToHash = true;
+        }
+      }
+    }
 
     if (!isValidPassword) {
       return NextResponse.json(
         { error: { code: "INVALID_CREDENTIALS", message: "Invalid email or password." } },
         { status: 401 }
       );
+    }
+
+    // Auto-migrate legacy plaintext password to bcrypt hash on successful login
+    if (shouldMigrateToHash) {
+      const newHash = await bcrypt.hash(password, 10);
+      await prisma.user
+        .update({
+          where: { id: user.id },
+          data: { password: newHash },
+        })
+        .catch((err) => console.error("Failed to auto-migrate password hash:", err));
     }
 
     // Role validation: if requestedRole is provided, verify user has authorization

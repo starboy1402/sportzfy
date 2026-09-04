@@ -70,3 +70,49 @@ test("TC-AUTH-04: Edge Web Crypto verification verifies valid tokens and rejects
   const forgedDecoded = await verifyEdgeSession(forgedToken);
   assert.strictEqual(forgedDecoded, null, "Edge verification must reject forged signature");
 });
+
+test("TC-AUTH-03: Session token older than 7 days is rejected as expired", async () => {
+  const user: SessionUser = {
+    id: "user_expired_77",
+    email: "expired@sportzfy.com",
+    name: "Expired User",
+    role: "CUSTOMER",
+  };
+
+  // Create token with timestamp 8 days ago
+  const eightDaysAgo = Date.now() - 8 * 24 * 60 * 60 * 1000;
+  const payload = {
+    ...user,
+    timestamp: eightDaysAgo,
+  };
+  const payloadBase64 = Buffer.from(JSON.stringify(payload)).toString("base64");
+  const crypto = await import("crypto");
+  const secret = process.env.SESSION_SECRET || "sportzfy_dev_fallback_secret_chattogram_2026";
+  const signature = crypto.default
+    .createHmac("sha256", secret)
+    .update(payloadBase64)
+    .digest("hex");
+  const expiredToken = `${payloadBase64}.${signature}`;
+
+  const decodedNode = decodeSession(expiredToken);
+  assert.strictEqual(decodedNode, null, "Node decodeSession must reject tokens older than 7 days");
+
+  const decodedEdge = await verifyEdgeSession(expiredToken);
+  assert.strictEqual(decodedEdge, null, "Edge verifyEdgeSession must reject tokens older than 7 days");
+});
+
+import bcrypt from "bcryptjs";
+
+test("TC-AUTH-05: Bcrypt password hashing and verification", async () => {
+  const plainPassword = "strongPassword#2026";
+  const hashedPassword = await bcrypt.hash(plainPassword, 10);
+
+  assert.ok(hashedPassword.startsWith("$2a$") || hashedPassword.startsWith("$2b$"), "Must be a valid bcrypt hash");
+  assert.notStrictEqual(hashedPassword, plainPassword, "Password must not be stored in plaintext");
+
+  const isMatch = await bcrypt.compare(plainPassword, hashedPassword);
+  assert.strictEqual(isMatch, true, "Bcrypt compare must verify matching password");
+
+  const isWrong = await bcrypt.compare("wrongPassword", hashedPassword);
+  assert.strictEqual(isWrong, false, "Bcrypt compare must reject invalid password");
+});

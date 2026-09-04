@@ -5,9 +5,14 @@ import { getCurrentUser } from "@/lib/auth";
 export async function GET(_request: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
-    const ownerWhere = currentUser && currentUser.role === "OWNER"
-      ? { id: currentUser.id }
-      : { role: "OWNER" };
+    if (!currentUser || (currentUser.role !== "OWNER" && currentUser.role !== "ADMIN")) {
+      return NextResponse.json(
+        { error: { code: "FORBIDDEN", message: "Venue Owner or Administrator access required." } },
+        { status: 403 }
+      );
+    }
+
+    const ownerWhere = currentUser.role === "ADMIN" ? { role: "OWNER" } : { id: currentUser.id };
 
     // Fetch authenticated owner user or first owner for demo
     const owner = await prisma.user.findFirst({
@@ -52,27 +57,41 @@ export async function GET(_request: NextRequest) {
       take: 5,
     });
 
-    // AI Dynamic Pricing & Demand Predictions (Directly from Proposal & CUET Guidelines Chapter 5.6!)
+    // Dynamic Pricing & Demand Insights computed from authentic venue data & occupancy
+    const primaryTurf = ownedTurfs[0];
+    const baseRate = primaryTurf?.basePricePerHour || 1400;
+    const turfName = primaryTurf?.name || "Eco Sports Halishahar Arena";
+
+    // Analyze booking time distribution across owner's venues
+    const peakBookingsCount = allBookings.filter((b) => {
+      const h = (new Date(b.startTime).getUTCHours() + 6) % 24; // BST
+      return h >= 20 && h <= 23;
+    }).length;
+
+    const peakRatio = totalBookingsCount > 0 ? Math.round((peakBookingsCount / totalBookingsCount) * 100) : 75;
+    const peakSuggested = baseRate + 200;
+    const offPeakSuggested = Math.max(800, baseRate - 200);
+
     const aiPricingInsights = [
       {
-        id: "ai-1",
-        turfName: ownedTurfs[0]?.name || "Eco Sports Arena",
+        id: "insight-peak",
+        turfName,
         targetWindow: "Friday & Saturday • 8:00 PM – 11:00 PM",
-        demandProbability: 94,
-        currentRate: ownedTurfs[0]?.basePricePerHour || 1400,
-        suggestedRate: (ownedTurfs[0]?.basePricePerHour || 1400) + 200,
-        recommendation: "High peak demand predicted based on multi-week density. Recommend increasing slot rate by +৳200 to maximize venue revenue.",
-        confidenceScore: "0.92 (scikit-learn Random Forest model)",
+        demandProbability: Math.min(98, Math.max(60, peakRatio + 15)),
+        currentRate: baseRate,
+        suggestedRate: peakSuggested,
+        recommendation: `High peak evening demand detected (${peakRatio}% booking concentration). Recommend dynamic peak rate of ৳${peakSuggested} to optimize revenue.`,
+        confidenceScore: "Dynamic Demand Heuristics (based on active venue bookings)",
       },
       {
-        id: "ai-2",
-        turfName: ownedTurfs[0]?.name || "Eco Sports Arena",
-        targetWindow: "Tuesday & Wednesday • 4:00 PM – 6:00 PM",
-        demandProbability: 38,
-        currentRate: ownedTurfs[0]?.basePricePerHour || 1400,
-        suggestedRate: (ownedTurfs[0]?.basePricePerHour || 1400) - 250,
-        recommendation: "Low off-peak occupancy predicted. Recommend a 15% discount (৳1,150) to attract student casual matches.",
-        confidenceScore: "0.89 (Historical occupancy regression)",
+        id: "insight-offpeak",
+        turfName,
+        targetWindow: "Weekday Afternoons • 4:00 PM – 6:00 PM",
+        demandProbability: Math.max(25, 100 - peakRatio),
+        currentRate: baseRate,
+        suggestedRate: offPeakSuggested,
+        recommendation: `Off-peak afternoon slots have lower density. Recommend offering a promotional rate of ৳${offPeakSuggested} to attract student teams.`,
+        confidenceScore: "Occupancy Curve Analysis (based on venue booking distribution)",
       },
     ];
 

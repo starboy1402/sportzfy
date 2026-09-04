@@ -169,6 +169,32 @@ test("TC-MATCH-02: Squad Join Acceptance Decrements Open Spots & Idempotency", a
   const finalMatch = await prisma.matchPost.findUnique({ where: { id: match.id } });
   assert.strictEqual(finalMatch?.openSpots, 0, "Spots must remain 0 (no duplicate decrement)");
 
+  // 3. Captain removes player -> open spot must be restored to 1 and status back to OPEN
+  await prisma.$transaction(async (tx) => {
+    const req = await tx.joinRequest.findUnique({
+      where: { id: joinReq.id },
+      include: { matchPost: true },
+    });
+    if (req?.status === "ACCEPTED") {
+      await tx.joinRequest.update({
+        where: { id: req.id },
+        data: { status: "REJECTED" },
+      });
+      const newOpenSpots = Math.min(req.matchPost.totalSpots, req.matchPost.openSpots + 1);
+      await tx.matchPost.update({
+        where: { id: req.matchPostId },
+        data: {
+          openSpots: newOpenSpots,
+          status: "OPEN",
+        },
+      });
+    }
+  });
+
+  const restoredMatch = await prisma.matchPost.findUnique({ where: { id: match.id } });
+  assert.strictEqual(restoredMatch?.openSpots, 1, "Open spots must be restored to 1 after player removal");
+  assert.strictEqual(restoredMatch?.status, "OPEN", "Match must be reopened after player removal");
+
   // Clean up
   await prisma.joinRequest.delete({ where: { id: joinReq.id } });
   await prisma.matchPost.delete({ where: { id: match.id } });
@@ -201,4 +227,85 @@ test("TC-BOOK-03: Expired Hold Rejection", async () => {
 
   // Clean up
   await prisma.hold.delete({ where: { id: expiredHold.id } });
+});
+
+test("TC-MATCH-03: Rejected Squad Applicant Can Re-apply without Unique Constraint Error", async () => {
+  const turf = await prisma.turf.findFirst();
+  const host = await prisma.user.findFirst({ where: { role: "CUSTOMER" } });
+  let applicant = await prisma.user.findFirst({
+    where: { id: { not: host!.id } },
+  });
+
+  if (!applicant) {
+    applicant = await prisma.user.create({
+      data: {
+        email: "reapply_applicant@sportzfy.com",
+        name: "Reapply Applicant",
+        role: "CUSTOMER",
+      },
+    });
+  }
+
+  assert.ok(turf && host && applicant, "Required seed data must exist");
+
+  const match = await prisma.matchPost.create({
+    data: {
+      hostUserId: host.id,
+      turfId: turf.id,
+      title: "Squad Re-application QA Test",
+      description: "Testing re-application after rejection.",
+      sportFormat: "6v6",
+      area: "Nasirabad, Chattogram",
+      matchTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+      totalSpots: 12,
+      openSpots: 3,
+      costPerPlayer: 120,
+      status: "OPEN",
+    },
+  });
+
+  // 1. Initial join request
+  const joinReq = await prisma.joinRequest.create({
+    data: {
+      matchPostId: match.id,
+      userId: applicant.id,
+      preferredRole: "Striker",
+      status: "PENDING",
+    },
+  });
+
+  // 2. Captain rejects request
+  const rejectedReq = await prisma.joinRequest.update({
+    where: { id: joinReq.id },
+    data: { status: "REJECTED" },
+  });
+  assert.strictEqual(rejectedReq.status, "REJECTED");
+
+  // 3. Applicant re-applies with updated role (should update existing record to PENDING)
+  const existing = await prisma.joinRequest.findUnique({
+    where: {
+      matchPostId_userId: {
+        matchPostId: match.id,
+        userId: applicant.id,
+      },
+    },
+  });
+
+  assert.ok(existing, "Existing record found");
+  assert.strictEqual(existing.status, "REJECTED");
+
+  const resubmitted = await prisma.joinRequest.update({
+    where: { id: existing.id },
+    data: {
+      preferredRole: "Defender",
+      status: "PENDING",
+    },
+  });
+
+  assert.strictEqual(resubmitted.status, "PENDING", "Status must be reset to PENDING");
+  assert.strictEqual(resubmitted.preferredRole, "Defender", "Role must update to Defender");
+
+  // Clean up
+  await prisma.joinRequest.delete({ where: { id: resubmitted.id } });
+  await prisma.matchPost.delete({ where: { id: match.id } });
 });

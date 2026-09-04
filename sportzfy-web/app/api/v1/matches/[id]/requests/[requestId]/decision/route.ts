@@ -36,6 +36,11 @@ export async function POST(
         throw new Error("REQUEST_NOT_FOUND");
       }
 
+      // Security: Ensure join request actually belongs to the match specified in the URL
+      if (joinReq.matchPostId !== id) {
+        throw new Error("MISMATCHED_MATCH_ID");
+      }
+
       // Security: Only the match host or admin can make roster decisions
       if (joinReq.matchPost.hostUserId !== currentUser.id && currentUser.role !== "ADMIN") {
         throw new Error("FORBIDDEN_HOST_ONLY");
@@ -57,14 +62,26 @@ export async function POST(
         include: { user: { select: { name: true, phone: true } } },
       });
 
-      // If accepted from PENDING, decrement open spots atomically
-      if (decision === "ACCEPTED" && joinReq.status === "PENDING") {
+      // If newly accepted (from PENDING or REJECTED), decrement open spots atomically
+      if (decision === "ACCEPTED" && joinReq.status !== "ACCEPTED") {
         const newOpenSpots = Math.max(0, joinReq.matchPost.openSpots - 1);
         await tx.matchPost.update({
-          where: { id },
+          where: { id: joinReq.matchPostId },
           data: {
             openSpots: newOpenSpots,
             ...(newOpenSpots === 0 && { status: "FULL" }),
+          },
+        });
+      }
+
+      // If an ACCEPTED player is removed/rejected, restore open spot and reopen match
+      if (decision === "REJECTED" && joinReq.status === "ACCEPTED") {
+        const newOpenSpots = Math.min(joinReq.matchPost.totalSpots, joinReq.matchPost.openSpots + 1);
+        await tx.matchPost.update({
+          where: { id: joinReq.matchPostId },
+          data: {
+            openSpots: newOpenSpots,
+            status: "OPEN",
           },
         });
       }
@@ -77,7 +94,7 @@ export async function POST(
       message:
         decision === "ACCEPTED"
           ? "Player added to squad! Open spots updated."
-          : "Join request declined.",
+          : "Player removed from squad and open slot restored.",
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -85,6 +102,12 @@ export async function POST(
       return NextResponse.json(
         { error: { code: "NOT_FOUND", message: "Join request not found." } },
         { status: 404 }
+      );
+    }
+    if (err.message === "MISMATCHED_MATCH_ID") {
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "This join request does not belong to the specified match." } },
+        { status: 400 }
       );
     }
     if (err.message === "MATCH_FULL") {

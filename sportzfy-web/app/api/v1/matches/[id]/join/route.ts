@@ -65,6 +65,29 @@ export async function POST(
     });
 
     if (existing) {
+      if (existing.status === "REJECTED") {
+        const updatedRequest = await prisma.joinRequest.update({
+          where: { id: existing.id },
+          data: {
+            preferredRole,
+            status: "PENDING",
+          },
+          include: {
+            user: {
+              select: { name: true, phone: true },
+            },
+          },
+        });
+
+        return NextResponse.json(
+          {
+            data: updatedRequest,
+            message: "Your join request has been resubmitted to the captain!",
+          },
+          { status: 200 }
+        );
+      }
+
       return NextResponse.json(
         { error: { code: "ALREADY_REQUESTED", message: "You have already submitted a join request for this match." } },
         { status: 409 }

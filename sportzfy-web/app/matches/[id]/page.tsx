@@ -17,6 +17,9 @@ import {
   Check,
   UserCheck,
   Phone,
+  X,
+  Shield,
+  UserMinus,
 } from "lucide-react";
 
 interface MatchDetail {
@@ -50,6 +53,7 @@ interface MatchDetail {
     preferredRole: string;
     createdAt: string;
     user: {
+      id: string;
       name: string;
       phone: string;
     };
@@ -64,9 +68,13 @@ export default function MatchDetailPage({
   const { id } = use(params);
 
   const [match, setMatch] = useState<MatchDetail | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Join request state
+  // Join request modal state
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [selectedRole, setSelectedRole] = useState("Goalkeeper");
+  const [playerNote, setPlayerNote] = useState("");
   const [isJoining, setIsJoining] = useState(false);
   const [joinSuccess, setJoinSuccess] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -78,6 +86,9 @@ export default function MatchDetailPage({
       const json = await res.json();
       if (json.data) {
         setMatch(json.data);
+        if (json.data.requiredRole) {
+          setSelectedRole(json.data.requiredRole);
+        }
       }
     } catch (err) {
       console.error("Error loading match", err);
@@ -88,10 +99,32 @@ export default function MatchDetailPage({
 
   useEffect(() => {
     loadMatch();
+    async function loadUser() {
+      try {
+        const res = await fetch("/api/v1/auth/me");
+        const json = await res.json();
+        if (json.data?.user) {
+          setCurrentUser(json.data.user);
+        }
+      } catch (err) {
+        console.error("Failed to load user session", err);
+      }
+    }
+    loadUser();
   }, [id]);
 
+  const isCaptain = Boolean(
+    currentUser && match && (currentUser.id === match.hostUser.id || currentUser.role === "ADMIN")
+  );
+  const myJoinRequest = match?.joinRequests.find(
+    (req) => req.user.id === currentUser?.id
+  );
+  const acceptedPlayers = match?.joinRequests.filter((req) => req.status === "ACCEPTED") || [];
+  const pendingRequests = match?.joinRequests.filter((req) => req.status === "PENDING") || [];
+
   // Request to Join
-  async function handleRequestJoin() {
+  async function handleRequestJoin(e: React.FormEvent) {
+    e.preventDefault();
     setIsJoining(true);
     setActionMessage(null);
 
@@ -100,7 +133,7 @@ export default function MatchDetailPage({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          preferredRole: match?.requiredRole || "Goalkeeper",
+          preferredRole: selectedRole || match?.requiredRole || "Goalkeeper",
         }),
       });
 
@@ -112,7 +145,8 @@ export default function MatchDetailPage({
       }
 
       setJoinSuccess(true);
-      setActionMessage("Your join request has been sent to the captain!");
+      setShowJoinModal(false);
+      setActionMessage("Success! Your squad request has been sent to Captain " + match?.hostUser.name);
       loadMatch(); // Refresh roster
     } catch (err) {
       console.error(err);
@@ -310,23 +344,47 @@ export default function MatchDetailPage({
               </Link>
             </div>
 
-            {/* Action Bar: Join or Share */}
+            {/* Action Bar: Join, Captain Status, or Share */}
             <div className="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-[var(--color-card-border)]">
-              {match.openSpots > 0 && (
+              {isCaptain ? (
+                <div className="w-full sm:flex-1 py-3 px-4 rounded-2xl bg-[var(--color-mint)] border border-[var(--color-field)]/40 text-[var(--color-forest)] font-bold text-xs flex items-center justify-center gap-2">
+                  <span className="text-base">👑</span>
+                  <span>You are the Host Captain of this Match</span>
+                </div>
+              ) : myJoinRequest ? (
+                <div className="w-full sm:flex-1 py-3 px-4 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 bg-[var(--color-paper)] border-[var(--color-card-border)]">
+                  {myJoinRequest.status === "ACCEPTED" ? (
+                    <span className="text-emerald-800 flex items-center gap-1.5">
+                      <CheckCircle className="w-4 h-4 text-[var(--color-field)]" />
+                      You are an Official Member of this Squad!
+                    </span>
+                  ) : myJoinRequest.status === "PENDING" ? (
+                    <span className="text-amber-800 flex items-center gap-1.5">
+                      <Clock className="w-4 h-4 text-amber-600" />
+                      Application Pending: Waiting for Captain to Accept
+                    </span>
+                  ) : (
+                    <span className="text-red-700">Application was declined by captain.</span>
+                  )}
+                </div>
+              ) : match.openSpots > 0 ? (
                 <button
-                  onClick={handleRequestJoin}
-                  disabled={isJoining || joinSuccess}
+                  type="button"
+                  onClick={() => setShowJoinModal(true)}
+                  disabled={joinSuccess}
                   className="btn-press w-full sm:flex-1 py-3.5 rounded-2xl bg-[var(--color-field)] hover:bg-[var(--color-field-hover)] text-white font-bold text-xs tracking-wide shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   <Users className="w-4 h-4" />
                   <span>
                     {joinSuccess
                       ? "Request Submitted ✓"
-                      : isJoining
-                      ? "Submitting..."
-                      : `Request to Join as ${match.requiredRole}`}
+                      : `Request to Join Squad (${match.openSpots} spot${match.openSpots > 1 ? "s" : ""} left)`}
                   </span>
                 </button>
+              ) : (
+                <div className="w-full sm:flex-1 py-3 px-4 rounded-2xl bg-gray-100 text-gray-600 text-xs font-bold text-center">
+                  Squad Roster is Full
+                </div>
               )}
 
               {/* 1-Click WhatsApp / Social Share */}
@@ -341,84 +399,293 @@ export default function MatchDetailPage({
           </div>
         </div>
 
-        {/* Captain's Roster Review Console */}
-        <section className="bg-white p-6 sm:p-8 rounded-3xl border border-[var(--color-card-border)] shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-[var(--color-card-border)] pb-4">
+        {/* 1. CONFIRMED SQUAD LINEUP / OFFICIAL ROSTER (Visible to All) */}
+        <section className="bg-white p-6 sm:p-8 rounded-3xl border border-[var(--color-card-border)] shadow-xs space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--color-card-border)] pb-4">
             <div>
-              <span className="text-[10px] uppercase font-bold text-[var(--color-accent-hover)] tracking-wider block">
-                Host Captain Management Console
-              </span>
-              <h3 className="font-display text-2xl font-bold text-[var(--color-forest)] uppercase">
-                Squad Join Requests ({match.joinRequests.length})
+              <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--color-field)] uppercase tracking-wider">
+                <Shield className="w-4 h-4" />
+                <span>Confirmed Match Roster</span>
+              </div>
+              <h3 className="font-display text-2xl sm:text-3xl font-bold text-[var(--color-forest)] uppercase">
+                Official Squad Lineup ({1 + acceptedPlayers.length}/{match.totalSpots})
               </h3>
             </div>
             <span className="text-xs font-semibold text-[var(--color-ink-muted)]">
-              {match.openSpots} spot{match.openSpots > 1 ? "s" : ""} remaining
+              {match.openSpots} spot{match.openSpots > 1 ? "s" : ""} left to complete squad
             </span>
           </div>
 
-          {match.joinRequests.length === 0 ? (
-            <p className="text-xs text-[var(--color-ink-muted)] text-center py-6">
-              No join requests received yet. Share the match link with your group!
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {match.joinRequests.map((req) => (
-                <div
-                  key={req.id}
-                  className="p-4 rounded-2xl bg-[var(--color-paper)] border border-[var(--color-card-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-[var(--color-forest)] text-sm">
-                        {req.user.name}
-                      </span>
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          req.status === "ACCEPTED"
-                            ? "bg-emerald-100 text-emerald-800"
-                            : req.status === "REJECTED"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-amber-100 text-amber-800"
-                        }`}
-                      >
-                        {req.status}
-                      </span>
-                    </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+            {/* Host Captain Jersey Card */}
+            <div className="p-4 rounded-2xl bg-[var(--color-mint)] border-2 border-[var(--color-field)]/40 flex flex-col justify-between gap-3 relative shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="px-2.5 py-0.5 rounded-full bg-[var(--color-accent)] text-[var(--color-forest-dark)] text-[10px] font-bold uppercase tracking-wider">
+                  👑 Captain & Host
+                </span>
+                <span className="text-[10px] font-bold text-[var(--color-field)] uppercase">Leader</span>
+              </div>
 
-                    <div className="flex items-center gap-3 text-[11px] text-[var(--color-ink-muted)]">
-                      <span>Role: <strong>{req.preferredRole}</strong></span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1">
-                        <Phone className="w-3 h-3 text-[var(--color-field)]" />
-                        {req.user.phone}
-                      </span>
-                    </div>
+              <div>
+                <h4 className="font-display text-xl font-bold text-[var(--color-forest)]">
+                  {match.hostUser.name}
+                </h4>
+                <p className="text-xs text-[var(--color-ink-muted)] flex items-center gap-1.5 mt-0.5">
+                  <Phone className="w-3.5 h-3.5 text-[var(--color-field)]" />
+                  <span>{match.hostUser.phone}</span>
+                </p>
+              </div>
+
+              <div className="pt-2 border-t border-[var(--color-card-border)]/60 text-[11px] text-[var(--color-forest)] font-semibold">
+                Pitch Booking Host
+              </div>
+            </div>
+
+            {/* Confirmed Joined Players */}
+            {acceptedPlayers.map((player) => (
+              <div
+                key={player.id}
+                className="p-4 rounded-2xl bg-white border border-[var(--color-card-border)] hover:border-[var(--color-field)] flex flex-col justify-between gap-3 shadow-xs transition-all"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase">
+                    {player.preferredRole}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-[var(--color-mint)] text-[var(--color-forest)] text-[10px] font-bold">
+                    Confirmed
+                  </span>
+                </div>
+
+                <div>
+                  <h4 className="font-display text-xl font-bold text-[var(--color-forest)]">
+                    {player.user.name}
+                  </h4>
+                  <p className="text-xs text-[var(--color-ink-muted)] flex items-center gap-1.5 mt-0.5">
+                    <Phone className="w-3.5 h-3.5 text-[var(--color-field)]" />
+                    <span>{player.user.phone}</span>
+                  </p>
+                </div>
+
+                {isCaptain ? (
+                  <div className="pt-2 border-t border-[var(--color-card-border)] flex items-center justify-between">
+                    <span className="text-[10px] text-[var(--color-ink-muted)]">Captain Controls:</span>
+                    <button
+                      type="button"
+                      onClick={() => handleDecision(player.id, "REJECTED")}
+                      className="btn-press px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-[11px] font-bold flex items-center gap-1 transition-colors"
+                      title="Remove player and restore open spot"
+                    >
+                      <UserMinus className="w-3 h-3" />
+                      <span>Remove</span>
+                    </button>
                   </div>
+                ) : (
+                  <div className="pt-2 border-t border-[var(--color-card-border)] text-[11px] text-emerald-800 font-semibold">
+                    Squad Member
+                  </div>
+                )}
+              </div>
+            ))}
 
-                  {req.status === "PENDING" && match.openSpots > 0 && (
+            {/* Remaining Open Slot Placeholders */}
+            {Array.from({ length: Math.min(match.openSpots, 6) }).map((_, idx) => (
+              <div
+                key={idx}
+                className="p-4 rounded-2xl border-2 border-dashed border-[var(--color-card-border)] bg-[var(--color-paper)]/50 flex flex-col justify-between items-center text-center py-6 gap-2"
+              >
+                <div className="w-8 h-8 rounded-full bg-[var(--color-mint)] text-[var(--color-field)] flex items-center justify-center font-bold text-xs">
+                  {acceptedPlayers.length + 2 + idx}
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-forest)] block">
+                    Open Spot
+                  </span>
+                  <span className="text-[10px] text-[var(--color-ink-muted)] font-medium">
+                    Looking for {match.requiredRole}
+                  </span>
+                </div>
+                {!isCaptain && !myJoinRequest && (
+                  <button
+                    type="button"
+                    onClick={() => setShowJoinModal(true)}
+                    className="text-[11px] font-bold text-[var(--color-field)] hover:underline"
+                  >
+                    Apply for this spot →
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* 2. CAPTAIN MANAGEMENT CONSOLE (Visible to Captain Only) */}
+        {isCaptain && (
+          <section className="bg-white p-6 sm:p-8 rounded-3xl border border-[var(--color-card-border)] shadow-xs space-y-4 anim-rise">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--color-card-border)] pb-4">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-[var(--color-accent-hover)] tracking-wider block">
+                  👑 Captain Approval Console
+                </span>
+                <h3 className="font-display text-2xl font-bold text-[var(--color-forest)] uppercase">
+                  Pending Applications ({pendingRequests.length})
+                </h3>
+              </div>
+              <span className="text-xs font-semibold text-[var(--color-ink-muted)]">
+                {match.openSpots} spot{match.openSpots > 1 ? "s" : ""} open to accept
+              </span>
+            </div>
+
+            {pendingRequests.length === 0 ? (
+              <div className="py-8 text-center text-xs text-[var(--color-ink-muted)] space-y-2">
+                <CheckCircle className="w-8 h-8 text-[var(--color-field)] mx-auto opacity-50" />
+                <p className="font-semibold text-[var(--color-forest)]">No Pending Requests</p>
+                <p>All incoming requests have been reviewed. Share on WhatsApp to fill remaining spots!</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {pendingRequests.map((req) => (
+                  <div
+                    key={req.id}
+                    className="p-4 rounded-2xl bg-[var(--color-paper)] border border-[var(--color-card-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-[var(--color-forest)] text-sm">
+                          {req.user.name}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                          PENDING REVIEW
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-3 text-[11px] text-[var(--color-ink-muted)]">
+                        <span>
+                          Applied as: <strong>{req.preferredRole}</strong>
+                        </span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1">
+                          <Phone className="w-3 h-3 text-[var(--color-field)]" />
+                          {req.user.phone}
+                        </span>
+                      </div>
+                    </div>
+
                     <div className="flex items-center gap-2 self-end sm:self-auto">
                       <button
                         onClick={() => handleDecision(req.id, "ACCEPTED")}
-                        className="btn-press px-3.5 py-1.5 rounded-xl bg-[var(--color-field)] hover:bg-[var(--color-field-hover)] text-white text-xs font-bold shadow-xs flex items-center gap-1"
+                        disabled={match.openSpots <= 0}
+                        className="btn-press px-3.5 py-2 rounded-xl bg-[var(--color-field)] hover:bg-[var(--color-field-hover)] text-white text-xs font-bold shadow-xs flex items-center gap-1.5 disabled:opacity-50"
                       >
-                        <UserCheck className="w-3.5 h-3.5" />
+                        <UserCheck className="w-4 h-4" />
                         <span>Accept to Squad</span>
                       </button>
                       <button
                         onClick={() => handleDecision(req.id, "REJECTED")}
-                        className="btn-press px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-bold"
+                        className="btn-press px-3 py-2 rounded-xl bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-bold"
                       >
                         Decline
                       </button>
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </main>
+
+      {/* Join Squad Modal */}
+      {showJoinModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+          onClick={() => setShowJoinModal(false)}
+        >
+          <div
+            className="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl border border-[var(--color-card-border)] relative my-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="bg-[var(--color-forest)] text-white p-6 relative">
+              <button
+                type="button"
+                onClick={() => setShowJoinModal(false)}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+                aria-label="Close modal"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <div className="flex items-center gap-2 text-xs font-bold uppercase text-[var(--color-accent)] mb-1">
+                <Users className="w-4 h-4" />
+                <span>Squad Application</span>
+              </div>
+              <h3 className="font-display text-2xl font-bold uppercase leading-tight">
+                Join {match.hostUser.name}&apos;s Squad
+              </h3>
+              <p className="text-xs text-emerald-100 mt-1">
+                {match.turf.name} • {match.sportFormat} • ৳{match.costPerPlayer}/player
+              </p>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleRequestJoin} className="p-6 space-y-4 text-xs">
+              <div>
+                <label className="font-bold text-[var(--color-forest)] block mb-1.5">
+                  Select Your Preferred Position:
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {["Goalkeeper", "Defender", "Midfielder", "Striker"].map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => setSelectedRole(role)}
+                      className={`p-2.5 rounded-xl border text-center font-bold transition-all cursor-pointer ${
+                        selectedRole === role
+                          ? "border-[var(--color-field)] bg-[var(--color-mint)] text-[var(--color-forest)] ring-2 ring-[var(--color-field)]"
+                          : "border-[var(--color-card-border)] bg-[var(--color-paper)] text-[var(--color-forest)] hover:border-[var(--color-field)]"
+                      }`}
+                    >
+                      {role === "Goalkeeper" ? "🧤 Goalkeeper" : role}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-[var(--color-paper)] border border-[var(--color-card-border)] space-y-1">
+                <span className="text-[10px] uppercase font-bold text-[var(--color-ink-muted)] block">
+                  Match Rules & Cost
+                </span>
+                <p className="text-[11px] text-[var(--color-forest)] font-medium">
+                  Player split cost is <strong>৳{match.costPerPlayer}</strong> paid at venue. The captain will review your application.
+                </p>
+              </div>
+
+              <div className="pt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowJoinModal(false)}
+                  className="btn-press flex-1 py-3 rounded-xl border border-[var(--color-card-border)] font-bold text-xs text-[var(--color-forest)] hover:bg-[var(--color-paper)]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isJoining}
+                  className="btn-press flex-1 py-3 rounded-xl bg-[var(--color-field)] hover:bg-[var(--color-field-hover)] text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  {isJoining ? (
+                    <span>Sending...</span>
+                  ) : (
+                    <>
+                      <span>Send Request</span>
+                      <Check className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

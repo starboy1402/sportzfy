@@ -32,6 +32,45 @@ test("TC-PRICE-02: Peak evening slot (8 PM - 11 PM) adds dynamic 150 BDT surchar
   assert.strictEqual(calculateSlotPrice(basePrice, slot22), 2650, "10 PM must have +150 BDT surcharge");
 });
 
+test("TC-PRICE-03: UTC vs BST Timezone-Invariant Peak Surcharge (Vercel Server Invariance)", () => {
+  const basePrice = 2000;
+
+  // 14:00 UTC = 20:00 BST (8:00 PM Bangladesh Time) -> MUST trigger peak surcharge (+150)
+  const utc14Slot = new Date("2026-09-10T14:00:00.000Z");
+  assert.strictEqual(
+    calculateSlotPrice(basePrice, utc14Slot),
+    2150,
+    "14:00 UTC (8 PM BST) must trigger peak surcharge"
+  );
+
+  // 17:00 UTC = 23:00 BST (11:00 PM Bangladesh Time) -> Peak boundary, MUST trigger surcharge
+  const utc17Slot = new Date("2026-09-10T17:00:00.000Z");
+  assert.strictEqual(
+    calculateSlotPrice(basePrice, utc17Slot),
+    2150,
+    "17:00 UTC (11 PM BST) must trigger peak surcharge"
+  );
+
+  // 20:00 UTC = 02:00 BST next day (2:00 AM Bangladesh Time) -> Off-peak, NO surcharge
+  const utc20Slot = new Date("2026-09-10T20:00:00.000Z");
+  assert.strictEqual(
+    calculateSlotPrice(basePrice, utc20Slot),
+    2000,
+    "20:00 UTC (2 AM BST) must NOT trigger peak surcharge despite raw UTC hour being 20"
+  );
+});
+
+test("TC-PRICE-04: Multi-hour duration scaling with peak pricing", () => {
+  const basePrice = 1000;
+  // 14:00 UTC (8 PM BST, peak) for 2 hours (until 16:00 UTC / 10 PM BST)
+  const start = new Date("2026-09-10T14:00:00.000Z");
+  const end = new Date("2026-09-10T16:00:00.000Z");
+
+  // Hourly peak rate = 1000 + 150 = 1150. For 2 hours = 2300.
+  const price = calculateSlotPrice(basePrice, start, end);
+  assert.strictEqual(price, 2300, "2-hour peak slot should be 2300 BDT");
+});
+
 test("TC-SLOT-01: Rejects slot in the past with SLOT_IN_PAST", () => {
   const now = new Date("2026-09-04T12:00:00.000Z");
   const pastStart = new Date("2026-09-04T10:00:00.000Z");
@@ -70,4 +109,14 @@ test("TC-SLOT-04: Accepts valid upcoming 1-hour slot", () => {
   const validation = validateSlotTimes(start, end, now);
   assert.strictEqual(validation.valid, true);
   assert.strictEqual(validation.errorCode, undefined);
+});
+
+test("TC-SLOT-05: Rejects slot exceeding 4 hours max duration with INVALID_DURATION", () => {
+  const now = new Date("2026-09-04T12:00:00.000Z");
+  const start = new Date("2026-09-05T14:00:00.000Z");
+  const end = new Date("2026-09-05T19:00:00.000Z"); // 5 hours duration
+
+  const validation = validateSlotTimes(start, end, now);
+  assert.strictEqual(validation.valid, false);
+  assert.strictEqual(validation.errorCode, "INVALID_DURATION");
 });

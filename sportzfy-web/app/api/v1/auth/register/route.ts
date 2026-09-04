@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { encodeSession, SESSION_COOKIE_NAME, SessionUser } from "@/lib/auth";
 
@@ -32,11 +33,14 @@ export async function POST(request: NextRequest) {
     // Assign role (defaults to CUSTOMER, allows OWNER)
     const assignedRole = role === "OWNER" ? "OWNER" : "CUSTOMER";
 
+    // Hash password with bcrypt (10 salt rounds)
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const newUser = await prisma.user.create({
       data: {
         name,
         email: cleanEmail,
-        password,
+        password: hashedPassword,
         phone: phone || null,
         role: assignedRole,
         profile: {

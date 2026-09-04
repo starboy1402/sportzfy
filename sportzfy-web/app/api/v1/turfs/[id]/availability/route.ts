@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { calculateSlotPrice, getBangladeshHour } from "@/lib/pricing";
 
 export async function GET(
   request: NextRequest,
@@ -23,40 +24,45 @@ export async function GET(
       );
     }
 
-    // Define target date bounds in local/Dhaka timezone
-    const selectedDate = new Date(dateParam);
-    const dayStart = new Date(selectedDate);
-    dayStart.setHours(0, 0, 0, 0);
+    // Define target date bounds deterministically in Bangladesh Standard Time (BST / UTC+6)
+    const [yearStr, monthStr, dayStr] = dateParam.split("-");
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10) - 1; // 0-indexed
+    const day = parseInt(dayStr, 10);
 
-    const dayEnd = new Date(selectedDate);
-    dayEnd.setDate(dayEnd.getDate() + 1);
-    dayEnd.setHours(3, 0, 0, 0); // Include past midnight slots up to 3 AM
+    // Midnight 00:00 BST on target day is 18:00 UTC of previous day (h - 6)
+    const dayStart = new Date(Date.UTC(year, month, day, 0 - 6, 0, 0));
+    // Day end extends to 3:00 AM BST next day (21:00 UTC of target day)
+    const dayEnd = new Date(Date.UTC(year, month, day, 27 - 6, 0, 0));
 
-    // Fetch existing bookings for this turf and date range
+    // Fetch existing bookings overlapping with target day range
     const bookings = await prisma.booking.findMany({
       where: {
         turfId: turf.id,
         status: { in: ["CONFIRMED", "PENDING_PAYMENT"] },
-        startTime: { gte: dayStart, lt: dayEnd },
+        startTime: { lt: dayEnd },
+        endTime: { gt: dayStart },
       },
     });
 
-    // Fetch active holds (where expiresAt > now and status is ACTIVE)
+    // Fetch active holds overlapping with target day range
     const now = new Date();
     const activeHolds = await prisma.hold.findMany({
       where: {
         turfId: turf.id,
         status: "ACTIVE",
         expiresAt: { gt: now },
-        startTime: { gte: dayStart, lt: dayEnd },
+        startTime: { lt: dayEnd },
+        endTime: { gt: dayStart },
       },
     });
 
-    // Fetch blocked intervals
+    // Fetch blocked intervals overlapping with target day range
     const blockedIntervals = await prisma.blockedInterval.findMany({
       where: {
         turfId: turf.id,
-        startTime: { gte: dayStart, lt: dayEnd },
+        startTime: { lt: dayEnd },
+        endTime: { gt: dayStart },
       },
     });
 
@@ -66,16 +72,9 @@ export async function GET(
     const hours = [16, 17, 18, 19, 20, 21, 22, 23, 24];
 
     for (const h of hours) {
-      const slotStart = new Date(selectedDate);
-      if (h === 24) {
-        slotStart.setDate(slotStart.getDate() + 1);
-        slotStart.setHours(0, 0, 0, 0);
-      } else {
-        slotStart.setHours(h, 0, 0, 0);
-      }
-
-      const slotEnd = new Date(slotStart);
-      slotEnd.setHours(slotStart.getHours() + 1);
+      // In BST (UTC+6), UTC hour = h - 6
+      const slotStart = new Date(Date.UTC(year, month, day, h - 6, 0, 0));
+      const slotEnd = new Date(Date.UTC(year, month, day, h + 1 - 6, 0, 0));
 
       // Check collisions
       const isBooked = bookings.some(
@@ -101,19 +100,19 @@ export async function GET(
         status = "BLOCKED";
       }
 
-      // Calculate hourly price with peak window adjustment (8 PM - 11 PM)
-      let price = turf.basePricePerHour;
-      const isPeakHour = h >= 20 && h <= 23;
-      if (isPeakHour) {
-        price += 150; // Dynamic peak hour addition
-      }
+      // Calculate hourly price with dynamic Bangladesh peak window adjustment (8 PM - 11 PM BST)
+      const bstHour = getBangladeshHour(slotStart);
+      const isPeakHour = bstHour >= 20 && bstHour <= 23;
+      const price = calculateSlotPrice(turf.basePricePerHour, slotStart);
 
-      // Format human-readable time label
-      const startHourNum = h === 24 ? 12 : h > 12 ? h - 12 : h;
-      const startPeriod = h >= 12 && h < 24 ? "PM" : "AM";
-      const endH = (h + 1) === 24 ? 12 : (h + 1) > 12 ? (h + 1) - 12 : (h + 1);
-      const endPeriod = (h + 1) >= 12 && (h + 1) < 24 ? "PM" : "AM";
-      const label = `${startHourNum}:00 ${startPeriod} - ${endH}:00 ${endPeriod}`;
+      // Format human-readable time label with 24-hour modulo arithmetic
+      const startHour24 = h % 24;
+      const endHour24 = (h + 1) % 24;
+      const startHourNum = startHour24 === 0 ? 12 : startHour24 > 12 ? startHour24 - 12 : startHour24;
+      const startPeriod = startHour24 >= 12 ? "PM" : "AM";
+      const endHourNum = endHour24 === 0 ? 12 : endHour24 > 12 ? endHour24 - 12 : endHour24;
+      const endPeriod = endHour24 >= 12 ? "PM" : "AM";
+      const label = `${startHourNum}:00 ${startPeriod} - ${endHourNum}:00 ${endPeriod}`;
 
       slots.push({
         slotId: `${turf.id}_${slotStart.getTime()}`,

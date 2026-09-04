@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { calculateSlotPrice, validateSlotTimes } from "@/lib/pricing";
@@ -51,11 +52,15 @@ export async function POST(request: NextRequest) {
       // 0. Verify turf exists & fetch authentic base rate
       const turf = await tx.turf.findUnique({
         where: { id: turfId },
-        select: { id: true, basePricePerHour: true, name: true },
+        select: { id: true, basePricePerHour: true, name: true, status: true },
       });
 
       if (!turf) {
         throw new Error("TURF_NOT_FOUND");
+      }
+
+      if (turf.status !== "APPROVED") {
+        throw new Error("TURF_NOT_AVAILABLE");
       }
 
       // Compute tamper-proof authentic price server-side
@@ -137,6 +142,8 @@ export async function POST(request: NextRequest) {
       });
 
       return newHold;
+    }, {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
     });
 
     return NextResponse.json(
@@ -147,10 +154,30 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error: any) {
+    // Catch PostgreSQL serialization conflicts under heavy concurrent requests
+    if (error.code === "P2034" || (error.message && error.message.includes("could not serialize access"))) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "SLOT_HELD_BY_ANOTHER",
+            message: "Another user is currently checking out this slot. It will become available if they do not complete payment within 5 minutes.",
+          },
+        },
+        { status: 409 }
+      );
+    }
+
     if (error.message === "TURF_NOT_FOUND") {
       return NextResponse.json(
         { error: { code: "NOT_FOUND", message: "Turf venue not found." } },
         { status: 404 }
+      );
+    }
+
+    if (error.message === "TURF_NOT_AVAILABLE") {
+      return NextResponse.json(
+        { error: { code: "TURF_NOT_AVAILABLE", message: "This turf is currently not available for reservations." } },
+        { status: 400 }
       );
     }
 
