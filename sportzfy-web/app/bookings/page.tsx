@@ -2,7 +2,9 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
-import { Calendar, MapPin, Clock, ArrowRight, ShieldCheck, Ticket } from "lucide-react";
+import { ArrowRight, Ticket } from "lucide-react";
+import QRCode from "qrcode";
+import BookingsClientList, { BookingWithDetails } from "@/components/BookingsClientList";
 
 export const revalidate = 0;
 
@@ -18,6 +20,57 @@ export default async function BookingsPage() {
     },
     orderBy: { createdAt: "desc" },
   });
+
+  const formattedBookings: BookingWithDetails[] = await Promise.all(
+    bookings.map(async (b) => {
+      const qrData = JSON.stringify({
+        ref: b.referenceCode,
+        turf: b.turf.name,
+        time: b.startTime,
+        player: b.user.name,
+        status: b.status,
+      });
+
+      const qrCode = await QRCode.toDataURL(qrData, {
+        width: 250,
+        margin: 2,
+        color: { dark: "#064E3B", light: "#FFFFFF" },
+      });
+
+      return {
+        id: b.id,
+        referenceCode: b.referenceCode,
+        startTime: b.startTime.toISOString(),
+        endTime: b.endTime.toISOString(),
+        totalAmount: b.totalAmount,
+        status: b.status,
+        paymentMethod: b.paymentMethod,
+        transactionId: b.transactionId,
+        createdAt: b.createdAt.toISOString(),
+        qrCode,
+        turf: {
+          id: b.turf.id,
+          slug: b.turf.slug,
+          name: b.turf.name,
+          area: b.turf.area,
+          city: b.turf.city,
+          address: b.turf.address,
+          coverImage: b.turf.coverImage,
+          pitchFormats: b.turf.pitchFormats,
+          hasFloodlights: b.turf.hasFloodlights,
+          hasParking: b.turf.hasParking,
+          hasWashroom: b.turf.hasWashroom,
+          hasChangingRoom: b.turf.hasChangingRoom,
+          hasWater: b.turf.hasWater,
+        },
+        user: {
+          name: b.user.name,
+          email: b.user.email,
+          phone: b.user.phone,
+        },
+      };
+    })
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--color-paper)] pb-16">
@@ -35,7 +88,7 @@ export default async function BookingsPage() {
               My Match Bookings
             </h1>
             <p className="text-xs sm:text-sm text-[var(--color-ink-muted)]">
-              View your confirmed match entry passes and reservation details.
+              View your confirmed match entry passes, scannable QR tickets, and reservation details.
             </p>
           </div>
 
@@ -49,7 +102,7 @@ export default async function BookingsPage() {
         </div>
 
         {/* Bookings List */}
-        {bookings.length === 0 ? (
+        {formattedBookings.length === 0 ? (
           <div className="p-12 text-center bg-white rounded-3xl border border-[var(--color-card-border)] shadow-xs">
             <Ticket className="w-12 h-12 text-[var(--color-ink-muted)] mx-auto mb-3 opacity-40" />
             <h3 className="font-display text-2xl font-bold text-[var(--color-forest)] uppercase">
@@ -66,50 +119,7 @@ export default async function BookingsPage() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-4">
-            {bookings.map((b) => (
-              <div
-                key={b.id}
-                className="bg-white rounded-2xl sm:rounded-3xl border border-[var(--color-card-border)] p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-[var(--color-mint)] border border-[var(--color-card-border)] flex items-center justify-center text-[var(--color-forest)] shrink-0">
-                    <ShieldCheck className="w-6 h-6 text-[var(--color-field)]" />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-display text-2xl font-bold text-[var(--color-forest)]">
-                        {b.turf.name}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                        {b.status}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--color-ink-muted)]">
-                      <span className="flex items-center gap-1 font-medium">
-                        <MapPin className="w-3.5 h-3.5 text-[var(--color-field)]" />
-                        {b.turf.area}, {b.turf.city}
-                      </span>
-                      <span>•</span>
-                      <span className="font-bold text-[var(--color-forest)]">
-                        Ref: {b.referenceCode}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 pt-3 sm:pt-0 border-[var(--color-card-border)]">
-                  <span className="text-[10px] uppercase font-bold text-[var(--color-ink-muted)]">
-                    Paid via {b.paymentMethod}
-                  </span>
-                  <span className="font-display text-2xl font-bold text-[var(--color-forest)]">
-                    ৳{b.totalAmount}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+          <BookingsClientList bookings={formattedBookings} />
         )}
       </main>
     </div>
