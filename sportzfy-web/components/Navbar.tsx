@@ -37,8 +37,12 @@ export default function Navbar() {
   const isOwnerView = pathname.startsWith("/owner");
   const isAdminView = pathname.startsWith("/admin");
 
-  // Fetch logged in session
-  async function checkSession() {
+  // Fetch logged in session (optimized with memory caching to eliminate repeated cloud DB roundtrips)
+  async function checkSession(force = false) {
+    if (!force && currentUser !== null) {
+      return;
+    }
+
     try {
       const res = await fetch("/api/v1/auth/me");
       const json = await res.json();
@@ -55,7 +59,9 @@ export default function Navbar() {
   }
 
   useEffect(() => {
-    checkSession();
+    // Force re-fetch session if on auth pages or initial load
+    const isAuthRoute = pathname === "/login" || pathname === "/register";
+    checkSession(isAuthRoute || currentUser === null);
   }, [pathname]);
 
   // Handle Logout

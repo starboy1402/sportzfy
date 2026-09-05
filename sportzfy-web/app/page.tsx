@@ -17,7 +17,7 @@ import {
 
 import TurfCatalog from "@/components/TurfCatalog";
 
-export const revalidate = 0; // Dynamic data
+export const revalidate = 60; // Instant cached load with 60s background revalidation (ISR)
 
 export default async function HomePage() {
   // Fetch real seeded turfs from database
