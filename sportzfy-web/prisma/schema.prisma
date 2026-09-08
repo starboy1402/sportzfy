@@ -59,6 +59,8 @@ model Turf {
   hasChangingRoom   Boolean            @default(true)
   hasParking        Boolean            @default(true)
   hasWater          Boolean            @default(true)
+  latitude          Float?
+  longitude         Float?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 

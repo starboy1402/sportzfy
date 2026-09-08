@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { calculateSlotPrice, getBangladeshHour } from "@/lib/pricing";
+import { calculateDynamicSlotPrice, calculateSlotPrice, getBangladeshHour } from "@/lib/pricing";
 
 export async function GET(
   request: NextRequest,
@@ -66,6 +66,18 @@ export async function GET(
       },
     });
 
+    // Calculate 4-week rolling booking density to feed the ML model
+    const fourWeeksAgo = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
+    const recentBookingsCount = await prisma.booking.count({
+      where: {
+        turfId: turf.id,
+        status: "CONFIRMED",
+        createdAt: { gte: fourWeeksAgo },
+      },
+    });
+    // Venue capacity across 28 days (~9 evening slots/day = 252 total slots)
+    const historicalDensity = Math.min(0.95, Math.max(0.15, Math.round((recentBookingsCount / 252) * 100) / 100));
+
     // Build standard evening/night timetable: 4 PM (16:00) through 12 AM (24:00)
     // 16:00, 17:00, 18:00, 19:00, 20:00, 21:00, 22:00, 23:00, 24:00 (00:00)
     const slots = [];
@@ -86,7 +98,7 @@ export async function GET(
       );
 
       const isBlocked = blockedIntervals.some(
-        (bl) => slotStart < bl.endTime && slotEnd > bl.startTime
+        (bi) => slotStart < bi.endTime && slotEnd > bi.startTime
       );
 
       let status = "AVAILABLE";
@@ -100,10 +112,11 @@ export async function GET(
         status = "BLOCKED";
       }
 
-      // Calculate hourly price with dynamic Bangladesh peak window adjustment (8 PM - 11 PM BST)
-      const bstHour = getBangladeshHour(slotStart);
-      const isPeakHour = bstHour >= 20 && bstHour <= 23;
-      const price = calculateSlotPrice(turf.basePricePerHour, slotStart);
+      // Calculate dynamic price using native Random Forest in-process engine with live density
+      const dynamicQuote = calculateDynamicSlotPrice(turf.basePricePerHour, slotStart, {
+        venueRating: turf.rating || 4.7,
+        historicalDensity,
+      });
 
       // Format human-readable time label with 24-hour modulo arithmetic
       const startHour24 = h % 24;
@@ -119,8 +132,14 @@ export async function GET(
         startTime: slotStart.toISOString(),
         endTime: slotEnd.toISOString(),
         timeLabel: label,
-        isPeakHour,
-        price,
+        isPeakHour: dynamicQuote.isPeak,
+        isDiscounted: dynamicQuote.isDiscounted,
+        demandScore: dynamicQuote.demandScore,
+        multiplier: dynamicQuote.multiplier,
+        badgeText: dynamicQuote.badgeText,
+        pricingExplanation: dynamicQuote.explanation,
+        price: dynamicQuote.finalPrice,
+        basePrice: turf.basePricePerHour,
         status, // "AVAILABLE" | "HELD" | "BOOKED" | "BLOCKED"
         holdExpiresAt: activeHold ? activeHold.expiresAt.toISOString() : null,
       });

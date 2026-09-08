@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
-import { calculateSlotPrice, validateSlotTimes } from "@/lib/pricing";
+import { calculateDynamicSlotPrice, calculateSlotPrice, validateSlotTimes } from "@/lib/pricing";
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       // 0. Verify turf exists & fetch authentic base rate
       const turf = await tx.turf.findUnique({
         where: { id: turfId },
-        select: { id: true, basePricePerHour: true, name: true, status: true },
+        select: { id: true, basePricePerHour: true, name: true, status: true, rating: true },
       });
 
       if (!turf) {
@@ -63,8 +63,24 @@ export async function POST(request: NextRequest) {
         throw new Error("TURF_NOT_AVAILABLE");
       }
 
-      // Compute tamper-proof authentic price server-side
-      const authenticPrice = calculateSlotPrice(turf.basePricePerHour, slotStart);
+      // Compute 4-week rolling booking density to feed the ML model
+      const fourWeeksAgo = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000);
+      const recentBookingsCount = await tx.booking.count({
+        where: {
+          turfId,
+          status: "CONFIRMED",
+          createdAt: { gte: fourWeeksAgo },
+        },
+      });
+      const historicalDensity = Math.min(0.95, Math.max(0.15, Math.round((recentBookingsCount / 252) * 100) / 100));
+
+      // Compute tamper-proof authentic price server-side using native Random Forest model
+      const dynamicQuote = calculateDynamicSlotPrice(turf.basePricePerHour, slotStart, {
+        venueRating: turf.rating || 4.7,
+        historicalDensity,
+        endTime: slotEnd,
+      });
+      const authenticPrice = dynamicQuote.finalPrice;
 
       // 1. Check for overlapping confirmed booking
       const conflictingBooking = await tx.booking.findFirst({

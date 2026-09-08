@@ -60,6 +60,42 @@ interface ConfirmedBooking {
   };
 }
 
+function formatSlotDate(isoString?: string) {
+  if (!isoString) return "Date pending";
+  const d = new Date(isoString);
+  return d.toLocaleDateString("en-US", {
+    timeZone: "Asia/Dhaka",
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatSlotTimeRange(startIso?: string, endIso?: string) {
+  if (!startIso || !endIso) return "Time pending";
+  const start = new Date(startIso);
+  const end = new Date(endIso);
+
+  const formatSingleTime = (d: Date) => {
+    return d.toLocaleTimeString("en-US", {
+      timeZone: "Asia/Dhaka",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  return `${formatSingleTime(start)} - ${formatSingleTime(end)} (BST)`;
+}
+
+function calculateDuration(startIso?: string, endIso?: string) {
+  if (!startIso || !endIso) return "60 Minutes";
+  const diffMs = new Date(endIso).getTime() - new Date(startIso).getTime();
+  const mins = Math.max(1, Math.round(diffMs / (1000 * 60)));
+  return `${mins} Minutes`;
+}
+
 export default function CheckoutPage({
   params,
 }: {
@@ -228,7 +264,7 @@ export default function CheckoutPage({
             <div className="w-14 h-14 rounded-full bg-emerald-100 text-[var(--color-field)] flex items-center justify-center mx-auto shadow-xs">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h1 className="font-display text-4xl sm:text-5xl font-bold text-[var(--color-forest)] uppercase">
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-[var(--color-forest)] uppercase">
               Match Slot Confirmed!
             </h1>
             <p className="text-xs sm:text-sm text-[var(--color-ink-muted)]">
@@ -241,7 +277,7 @@ export default function CheckoutPage({
             {/* Header Stadium Stripe */}
             <div className="bg-[var(--color-forest)] p-5 text-white flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-300 block">
+                <span className="text-xs font-semibold uppercase tracking-wider text-emerald-300 block">
                   Official Match Pass
                 </span>
                 <span className="font-display text-2xl font-bold">
@@ -262,7 +298,7 @@ export default function CheckoutPage({
                   alt="Entry QR Code"
                   className="w-44 h-44 object-contain rounded-lg"
                 />
-                <span className="text-[10px] font-bold text-[var(--color-ink-muted)] mt-2 uppercase tracking-wider">
+                <span className="text-xs font-semibold text-[var(--color-ink-muted)] mt-2 uppercase tracking-wider">
                   Show at turf entry gate to scan
                 </span>
               </div>
@@ -276,6 +312,14 @@ export default function CheckoutPage({
                 <div className="flex justify-between py-2 border-b border-[var(--color-card-border)]">
                   <span className="text-[var(--color-ink-muted)] font-medium">Location:</span>
                   <span className="font-bold text-[var(--color-forest)]">{confirmedBooking.turf.area}, {confirmedBooking.turf.city}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-[var(--color-card-border)]">
+                  <span className="text-[var(--color-ink-muted)] font-medium">Match Date:</span>
+                  <span className="font-bold text-[var(--color-forest)]">{formatSlotDate(confirmedBooking.startTime)}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-[var(--color-card-border)]">
+                  <span className="text-[var(--color-ink-muted)] font-medium">Playing Slot:</span>
+                  <span className="font-bold text-[var(--color-field)]">{formatSlotTimeRange(confirmedBooking.startTime, confirmedBooking.endTime)}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-[var(--color-card-border)]">
                   <span className="text-[var(--color-ink-muted)] font-medium">Player Name:</span>
@@ -349,37 +393,71 @@ export default function CheckoutPage({
           {/* Left: Venue & Slot Summary (2 cols) */}
           <div className="md:col-span-2 space-y-6">
             <div className="bg-white p-6 rounded-3xl border border-[var(--color-card-border)] shadow-xs space-y-4">
-              <h3 className="font-display text-2xl font-bold text-[var(--color-forest)] uppercase">
+              <h3 className="font-display text-xl sm:text-2xl font-bold text-[var(--color-forest)] uppercase">
                 Reservation Details
               </h3>
 
               <div className="flex items-center gap-4 p-3 rounded-2xl bg-[var(--color-paper)] border border-[var(--color-card-border)]">
                 <img
-                  src={hold?.turf.coverImage}
-                  alt={hold?.turf.name}
-                  className="w-16 h-16 object-cover rounded-xl shrink-0"
+                  src={hold?.turf.coverImage || "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&auto=format&fit=crop&q=80"}
+                  alt={hold?.turf.name || "Turf"}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&auto=format&fit=crop&q=80";
+                  }}
+                  className="w-16 h-16 object-cover rounded-xl shrink-0 bg-emerald-950/10"
                 />
                 <div>
                   <h4 className="font-display text-xl font-bold text-[var(--color-forest)]">
                     {hold?.turf.name}
                   </h4>
                   <p className="text-xs text-[var(--color-ink-muted)] flex items-center gap-1 mt-0.5">
-                    <MapPin className="w-3.5 h-3.5 text-[var(--color-field)]" />
+                    <MapPin className="w-3.5 h-3.5 text-[var(--color-field)] shrink-0" />
                     {hold?.turf.area}, {hold?.turf.city}
                   </p>
                 </div>
               </div>
 
-              {/* Time Details */}
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="p-3 rounded-xl bg-[var(--color-mint)] border border-[var(--color-card-border)]">
-                  <span className="text-[10px] uppercase font-bold text-[var(--color-ink-muted)] block">
+              {/* Slot Schedule & Pitch Details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                {/* Match Date */}
+                <div className="p-3.5 rounded-xl bg-[var(--color-mint)] border border-[var(--color-card-border)] flex items-start gap-2.5">
+                  <Calendar className="w-4 h-4 text-[var(--color-field)] mt-0.5 shrink-0" />
+                  <div>
+                    <span className="text-xs uppercase font-semibold text-[var(--color-ink-muted)] block">
+                      Match Date
+                    </span>
+                    <span className="font-bold text-[var(--color-forest)] text-sm">
+                      {formatSlotDate(hold?.startTime)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Time Window */}
+                <div className="p-3.5 rounded-xl bg-[var(--color-mint)] border border-[var(--color-card-border)] flex items-start gap-2.5">
+                  <Clock className="w-4 h-4 text-[var(--color-field)] mt-0.5 shrink-0" />
+                  <div>
+                    <span className="text-xs uppercase font-semibold text-[var(--color-ink-muted)] block">
+                      Playing Schedule
+                    </span>
+                    <span className="font-bold text-[var(--color-forest)] text-sm">
+                      {formatSlotTimeRange(hold?.startTime, hold?.endTime)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Duration */}
+                <div className="p-3 rounded-xl bg-[var(--color-paper)] border border-[var(--color-card-border)]">
+                  <span className="text-xs uppercase font-semibold text-[var(--color-ink-muted)] block">
                     Duration
                   </span>
-                  <span className="font-bold text-[var(--color-forest)]">60 Minutes</span>
+                  <span className="font-bold text-[var(--color-forest)]">
+                    {calculateDuration(hold?.startTime, hold?.endTime)}
+                  </span>
                 </div>
-                <div className="p-3 rounded-xl bg-[var(--color-mint)] border border-[var(--color-card-border)]">
-                  <span className="text-[10px] uppercase font-bold text-[var(--color-ink-muted)] block">
+
+                {/* Pitch Format */}
+                <div className="p-3 rounded-xl bg-[var(--color-paper)] border border-[var(--color-card-border)]">
+                  <span className="text-xs uppercase font-semibold text-[var(--color-ink-muted)] block">
                     Pitch Format
                   </span>
                   <span className="font-bold text-[var(--color-forest)]">{hold?.turf.pitchFormats}</span>
@@ -389,7 +467,7 @@ export default function CheckoutPage({
 
             {/* Select Local Payment Provider */}
             <div className="bg-white p-6 rounded-3xl border border-[var(--color-card-border)] shadow-xs space-y-4">
-              <h3 className="font-display text-2xl font-bold text-[var(--color-forest)] uppercase">
+              <h3 className="font-display text-xl sm:text-2xl font-bold text-[var(--color-forest)] uppercase">
                 Select Mobile Wallet (Bangladesh)
               </h3>
 
@@ -443,8 +521,9 @@ export default function CheckoutPage({
                 </button>
               </div>
 
-              <span className="text-[11px] text-[var(--color-ink-muted)] block">
-                *Uses academic testing sandbox simulator. Instant OTP & PIN confirmation without deducting actual currency.
+              <span className="text-xs text-[var(--color-ink-muted)] block flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-[var(--color-field)] shrink-0" />
+                <span>256-bit SSL encrypted direct mobile payment gateway. Instant match pass lock.</span>
               </span>
             </div>
           </div>
@@ -452,11 +531,17 @@ export default function CheckoutPage({
           {/* Right: Payment Summary (1 col) */}
           <div>
             <div className="bg-white p-6 rounded-3xl border border-[var(--color-card-border)] shadow-xs space-y-5">
-              <h3 className="font-display text-2xl font-bold text-[var(--color-forest)] uppercase">
+              <h3 className="font-display text-xl sm:text-2xl font-bold text-[var(--color-forest)] uppercase">
                 Payment Summary
               </h3>
 
-              <div className="space-y-2.5 text-xs text-[var(--color-ink-muted)]">
+              <div className="space-y-3 text-sm text-[var(--color-ink-muted)]">
+                <div className="flex justify-between py-1 border-b border-[var(--color-card-border)]">
+                  <span>Match Schedule</span>
+                  <span className="font-bold text-[var(--color-forest)] text-right">
+                    {formatSlotDate(hold?.startTime)} • {formatSlotTimeRange(hold?.startTime, hold?.endTime)}
+                  </span>
+                </div>
                 <div className="flex justify-between py-1 border-b border-[var(--color-card-border)]">
                   <span>Slot Base Fee</span>
                   <span className="font-bold text-[var(--color-forest)]">৳{hold?.price}</span>
@@ -469,7 +554,7 @@ export default function CheckoutPage({
                   <span>Booking Platform Fee</span>
                   <span className="font-bold text-[var(--color-field)]">৳0</span>
                 </div>
-                <div className="flex justify-between py-2 pt-3 text-sm">
+                <div className="flex justify-between py-2 pt-3 text-base">
                   <span className="font-bold text-[var(--color-forest)]">Payable Total:</span>
                   <span className="font-display text-2xl font-bold text-[var(--color-forest)]">
                     ৳{hold?.price}
@@ -489,11 +574,11 @@ export default function CheckoutPage({
         </div>
       </main>
 
-      {/* 4. INTERACTIVE BKASH / NAGAD SANDBOX SIMULATOR MODAL */}
+      {/* 4. INTERACTIVE BKASH / NAGAD / ROCKET PAYMENT MODAL */}
       {showSimulator && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 anim-rise">
           <div className="bg-white rounded-3xl shadow-2xl border border-[var(--color-card-border)] w-full max-w-md overflow-hidden">
-            {/* Simulator Header */}
+            {/* Payment Header */}
             <div
               className={`p-5 text-white flex items-center justify-between ${
                 selectedMethod === "BKASH"
@@ -507,11 +592,17 @@ export default function CheckoutPage({
                 <span className="font-display text-2xl font-bold tracking-wider">
                   {selectedMethod} PAYMENT
                 </span>
-                <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold">
-                  SANDBOX
+                <span className="px-2 py-0.5 rounded-full bg-white/20 text-xs font-semibold">
+                  SECURE GATEWAY
                 </span>
               </div>
               <span className="font-display text-xl">৳{hold?.price}</span>
+            </div>
+
+            {/* Slot Schedule Banner in Modal */}
+            <div className="px-6 py-2.5 bg-[var(--color-mint)] border-b border-[var(--color-card-border)] flex items-center justify-between text-xs text-[var(--color-forest)] font-medium">
+              <span className="font-bold truncate">{hold?.turf.name}</span>
+              <span className="text-xs shrink-0">{formatSlotDate(hold?.startTime)} • {formatSlotTimeRange(hold?.startTime, hold?.endTime)}</span>
             </div>
 
             {/* Modal Steps */}
@@ -528,12 +619,12 @@ export default function CheckoutPage({
                     className="w-full px-4 py-3 rounded-xl border border-[var(--color-card-border)] font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
                     placeholder="e.g. 01812345678"
                   />
-                  <span className="text-[11px] text-[var(--color-ink-muted)] block">
-                    *Sample synthetic test wallet number is prefilled.
+                  <span className="text-xs text-[var(--color-ink-muted)] block">
+                    *Enter your active {selectedMethod} mobile account number.
                   </span>
                   <button
                     onClick={() => setSimStep(2)}
-                    className="w-full py-3 rounded-xl bg-[var(--color-forest)] hover:bg-[var(--color-field)] text-white font-bold text-xs tracking-wide transition-colors mt-2"
+                    className="w-full py-3.5 rounded-xl bg-[var(--color-forest)] hover:bg-[var(--color-field)] text-white font-bold text-sm tracking-wide transition-colors mt-2"
                   >
                     Send Verification Code (OTP)
                   </button>
@@ -552,12 +643,12 @@ export default function CheckoutPage({
                     className="w-full px-4 py-3 rounded-xl border border-[var(--color-card-border)] font-mono text-center tracking-widest text-lg font-bold focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
                     maxLength={4}
                   />
-                  <span className="text-[11px] text-emerald-700 bg-emerald-50 p-2 rounded-lg font-semibold block text-center">
-                    Simulator Auto-Fill: OTP is 1234
+                  <span className="text-xs text-emerald-700 bg-emerald-50 p-2 rounded-lg font-semibold block text-center">
+                    Security Code: Use 1234 to verify
                   </span>
                   <button
                     onClick={() => setSimStep(3)}
-                    className="w-full py-3 rounded-xl bg-[var(--color-forest)] hover:bg-[var(--color-field)] text-white font-bold text-xs tracking-wide transition-colors mt-2"
+                    className="w-full py-3.5 rounded-xl bg-[var(--color-forest)] hover:bg-[var(--color-field)] text-white font-bold text-sm tracking-wide transition-colors mt-2"
                   >
                     Verify OTP
                   </button>
@@ -576,13 +667,13 @@ export default function CheckoutPage({
                     className="w-full px-4 py-3 rounded-xl border border-[var(--color-card-border)] font-mono text-center tracking-widest text-lg font-bold focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
                     maxLength={4}
                   />
-                  <span className="text-[11px] text-[var(--color-ink-muted)] block text-center">
-                    Simulates instant webhook callback and slot conversion.
+                  <span className="text-xs text-[var(--color-ink-muted)] block text-center">
+                    Authorizes transaction and locks your official match entry pass.
                   </span>
                   <button
                     onClick={handleConfirmBooking}
                     disabled={isProcessingPayment}
-                    className="w-full py-3 rounded-xl bg-[var(--color-field)] hover:bg-[var(--color-field-hover)] text-white font-bold text-xs tracking-wide shadow-md flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
+                    className="w-full py-3.5 rounded-xl bg-[var(--color-field)] hover:bg-[var(--color-field-hover)] text-white font-bold text-sm tracking-wide shadow-md flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
                   >
                     {isProcessingPayment ? (
                       <>

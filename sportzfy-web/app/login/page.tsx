@@ -104,7 +104,7 @@ function LoginFormContent() {
         <h1 className="font-display text-4xl font-bold text-[var(--color-forest)] uppercase tracking-wider">
           SIGN IN TO SPORTZ<span className="text-[var(--color-field)]">FY</span>
         </h1>
-        <p className="text-xs text-[var(--color-ink-muted)]">
+        <p className="text-xs sm:text-sm text-[var(--color-ink-muted)]">
           Access your player bookings, turf venue management, or platform operations.
         </p>
       </div>
@@ -137,7 +137,7 @@ function LoginFormContent() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="e.g. yourname@example.com"
-            className="w-full px-4 py-3 rounded-xl border border-[var(--color-card-border)] font-semibold text-xs bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
+            className="w-full px-4 py-3 rounded-xl border border-[var(--color-card-border)] font-medium text-sm bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
           />
         </div>
 
@@ -153,43 +153,43 @@ function LoginFormContent() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter your password"
-            className="w-full px-4 py-3 rounded-xl border border-[var(--color-card-border)] font-mono text-xs bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
+            className="w-full px-4 py-3 rounded-xl border border-[var(--color-card-border)] font-mono text-sm bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="btn-press w-full py-3.5 rounded-2xl bg-[var(--color-field)] hover:bg-[var(--color-field-hover)] text-white font-bold text-xs tracking-wider uppercase shadow-md flex items-center justify-center gap-2 mt-2 disabled:opacity-50 cursor-pointer"
+          className="btn-press w-full py-3.5 rounded-2xl bg-[var(--color-field)] hover:bg-[var(--color-field-hover)] text-white font-bold text-sm tracking-wider uppercase shadow-md flex items-center justify-center gap-2 mt-2 disabled:opacity-50 cursor-pointer"
         >
           <span>{loading ? "Authenticating..." : "Sign In →"}</span>
           <ArrowRight className="w-4 h-4" />
         </button>
 
-        {/* 1-Click Fast Switch Demo Buttons */}
+        {/* 1-Click Fast Switch Accounts */}
         <div className="pt-4 border-t border-[var(--color-card-border)] space-y-2">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)] block text-center">
-            ⚡ Quick Demo Accounts (1-Click Fill)
+          <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-ink-muted)] block text-center">
+            ⚡ Quick Login (Pre-Configured Accounts)
           </span>
-          <div className="grid grid-cols-3 gap-2 text-[11px]">
+          <div className="grid grid-cols-3 gap-2 text-xs">
             <button
               type="button"
-              onClick={() => handleFillDemo("player@sportzfy.com", "Demo Player (Sakib)")}
-              className="p-2 rounded-xl bg-[var(--color-mint)] border border-[var(--color-card-border)] font-bold text-[var(--color-forest)] hover:border-[var(--color-field)] text-center cursor-pointer transition-all"
+              onClick={() => handleFillDemo("player@sportzfy.com", "Sakib (Player)")}
+              className="p-2.5 rounded-xl bg-[var(--color-mint)] border border-[var(--color-card-border)] font-bold text-[var(--color-forest)] hover:border-[var(--color-field)] text-center cursor-pointer transition-all"
             >
               ⚽ Player
             </button>
             <button
               type="button"
-              onClick={() => handleFillDemo("owner@sportzfy.com", "Demo Owner (Tariqul)")}
-              className="p-2 rounded-xl bg-[var(--color-mint)] border border-[var(--color-card-border)] font-bold text-[var(--color-forest)] hover:border-[var(--color-field)] text-center cursor-pointer transition-all"
+              onClick={() => handleFillDemo("owner@sportzfy.com", "Tariqul (Turf Partner)")}
+              className="p-2.5 rounded-xl bg-[var(--color-mint)] border border-[var(--color-card-border)] font-bold text-[var(--color-forest)] hover:border-[var(--color-field)] text-center cursor-pointer transition-all"
             >
-              🏟️ Owner
+              🏟️ Turf Partner
             </button>
             <button
               type="button"
-              onClick={() => handleFillDemo("admin@sportzfy.com", "Demo Admin")}
-              className="p-2 rounded-xl bg-purple-50 border border-purple-200 font-bold text-purple-800 hover:border-purple-400 text-center cursor-pointer transition-all"
+              onClick={() => handleFillDemo("admin@sportzfy.com", "Administrator")}
+              className="p-2.5 rounded-xl bg-purple-50 border border-purple-200 font-bold text-purple-800 hover:border-purple-400 text-center cursor-pointer transition-all"
             >
               🛡️ Admin
             </button>

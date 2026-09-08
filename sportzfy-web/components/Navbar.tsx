@@ -90,7 +90,7 @@ export default function Navbar() {
                 <span className="font-display text-2xl sm:text-3xl tracking-wider text-[var(--color-forest)] leading-none">
                   SPORTZ<span className="text-[var(--color-field)]">FY</span>
                 </span>
-                <span className="text-[10px] tracking-widest font-semibold uppercase text-[var(--color-ink-muted)]">
+                <span className="text-xs tracking-wider font-semibold uppercase text-[var(--color-ink-muted)]">
                   {isAdminView
                     ? "Platform Governance"
                     : isOwnerView
@@ -244,7 +244,7 @@ export default function Navbar() {
                   <span className="text-xs font-bold text-[var(--color-forest)] leading-none">
                     {currentUser.name.split(" ")[0]}
                   </span>
-                  <span className="text-[9px] font-semibold text-[var(--color-field)] uppercase">
+                  <span className="text-xs font-semibold text-[var(--color-field)] uppercase">
                     {currentUser.role}
                   </span>
                 </div>
@@ -280,14 +280,14 @@ export default function Navbar() {
             {currentUser ? (
               <button
                 onClick={handleLogout}
-                className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-100 text-red-700"
+                className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700"
               >
                 Logout
               </button>
             ) : (
               <Link
                 href="/login"
-                className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-[var(--color-forest)] text-white"
+                className="px-3 py-1 rounded-full text-xs font-bold bg-[var(--color-forest)] text-white"
               >
                 Sign In
               </Link>
@@ -309,7 +309,7 @@ export default function Navbar() {
           {currentUser && (
             <div className="p-3 rounded-xl bg-[var(--color-mint)] border border-[var(--color-card-border)] mb-2">
               <span className="text-xs font-bold text-[var(--color-forest)] block">{currentUser.name}</span>
-              <span className="text-[10px] font-semibold text-[var(--color-field)] uppercase">{currentUser.role} ({currentUser.email})</span>
+              <span className="text-xs font-semibold text-[var(--color-field)] uppercase">{currentUser.role} ({currentUser.email})</span>
             </div>
           )}
 

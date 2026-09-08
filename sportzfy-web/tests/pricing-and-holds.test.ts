@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert";
-import { calculateSlotPrice, validateSlotTimes } from "../lib/pricing";
+import { calculateSlotPrice, calculateDynamicSlotPrice, getBangladeshDateTimeParts, validateSlotTimes } from "../lib/pricing";
 
 test("TC-PRICE-01: Standard daytime slot computes base price without surcharge", () => {
   const basePrice = 2000;
@@ -119,4 +119,64 @@ test("TC-SLOT-05: Rejects slot exceeding 4 hours max duration with INVALID_DURAT
   const validation = validateSlotTimes(start, end, now);
   assert.strictEqual(validation.valid, false);
   assert.strictEqual(validation.errorCode, "INVALID_DURATION");
+});
+
+test("TC-ML-PRICE-01: In-process tree traversal sub-millisecond execution SLA", () => {
+  const basePrice = 1500;
+  const slot = new Date("2026-09-11T14:00:00.000Z"); // 20:00 BST (Friday)
+  
+  const start = performance.now();
+  const quote = calculateDynamicSlotPrice(basePrice, slot);
+  const elapsed = performance.now() - start;
+
+  assert.ok(elapsed < 2.0, `In-process inference should complete well under 2ms, took ${elapsed.toFixed(3)}ms`);
+  assert.ok(quote.finalPrice > 0);
+  assert.ok(quote.demandScore >= 0 && quote.demandScore <= 1.0);
+});
+
+test("TC-ML-PRICE-02: Strict safety clamp floor: Price cannot fall below 0.80x base price", () => {
+  const basePrice = 2000;
+  // Monday 6:00 AM BST (off-peak, rainy, lowest rating)
+  const mondayDawn = new Date("2026-09-07T00:00:00.000Z"); // 06:00 BST
+  const quote = calculateDynamicSlotPrice(basePrice, mondayDawn, {
+    venueRating: 4.0,
+    historicalDensity: 0.1,
+    isRainy: true,
+  });
+
+  const minFloor = 2000 * 0.80; // 1600 BDT
+  assert.ok(
+    quote.finalPrice >= minFloor,
+    `Final price (${quote.finalPrice}) violated minimum 0.80x floor (${minFloor})`
+  );
+  assert.ok(quote.multiplier >= 0.80, `Multiplier (${quote.multiplier}) violated 0.80 floor`);
+});
+
+test("TC-ML-PRICE-03: Strict safety clamp ceiling: Price cannot exceed 1.30x base price", () => {
+  const basePrice = 2000;
+  // Friday 8:00 PM BST (peak weekend floodlight, high rating, dry)
+  const fridayPeak = new Date("2026-09-11T14:00:00.000Z"); // 20:00 BST
+  const quote = calculateDynamicSlotPrice(basePrice, fridayPeak, {
+    venueRating: 5.0,
+    historicalDensity: 0.99,
+    isRainy: false,
+  });
+
+  const maxCeiling = 2000 * 1.30; // 2600 BDT
+  assert.ok(
+    quote.finalPrice <= maxCeiling,
+    `Final price (${quote.finalPrice}) violated maximum 1.30x ceiling (${maxCeiling})`
+  );
+  assert.ok(quote.multiplier <= 1.30, `Multiplier (${quote.multiplier}) violated 1.30 ceiling`);
+});
+
+test("TC-ML-PRICE-04: Bangladesh Standard Time invariant feature derivation", () => {
+  // 15:00 UTC on Friday = 21:00 BST (Friday peak hour)
+  const utcDate = new Date("2026-09-11T15:00:00.000Z");
+  const bstParts = getBangladeshDateTimeParts(utcDate);
+
+  assert.strictEqual(bstParts.hour, 21, "BST hour must be 21 (9 PM)");
+  assert.strictEqual(bstParts.dayOfWeek, 4, "BST day of week must be 4 (Friday)");
+  assert.strictEqual(bstParts.isWeekend, 1, "Friday is a weekend in Bangladesh");
+  assert.strictEqual(bstParts.isPrimeHour, 1, "21:00 is a prime floodlight hour");
 });

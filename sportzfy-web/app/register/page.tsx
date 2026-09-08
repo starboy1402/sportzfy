@@ -92,7 +92,7 @@ export default function RegisterPage() {
           <h1 className="font-display text-4xl font-bold text-[var(--color-forest)] uppercase tracking-wider">
             JOIN SPORTZ<span className="text-[var(--color-field)]">FY</span>
           </h1>
-          <p className="text-xs text-[var(--color-ink-muted)]">
+          <p className="text-xs sm:text-sm text-[var(--color-ink-muted)]">
             Create an account to book pitches across Bangladesh or register your sports venue.
           </p>
         </div>
@@ -112,7 +112,7 @@ export default function RegisterPage() {
             <span className="font-display text-lg font-bold text-[var(--color-forest)] block">
               Player / Captain
             </span>
-            <span className="text-[11px] text-[var(--color-ink-muted)] block mt-0.5">
+            <span className="text-xs text-[var(--color-ink-muted)] block mt-0.5">
               Book slots, recruit squads & play
             </span>
           </button>
@@ -130,7 +130,7 @@ export default function RegisterPage() {
             <span className="font-display text-lg font-bold text-[var(--color-forest)] block">
               Turf Venue Owner
             </span>
-            <span className="text-[11px] text-[var(--color-ink-muted)] block mt-0.5">
+            <span className="text-xs text-[var(--color-ink-muted)] block mt-0.5">
               List turf, manage schedule & revenue
             </span>
           </button>
@@ -144,7 +144,7 @@ export default function RegisterPage() {
             </div>
             {existingAccountEmail && (
               <div className="pt-2 border-t border-red-200/60 flex items-center justify-between">
-                <span className="text-[11px] text-red-800">Already have an account?</span>
+                <span className="text-xs text-red-800 font-medium">Already have an account?</span>
                 <Link
                   href={`/login?email=${encodeURIComponent(existingAccountEmail)}`}
                   className="px-3 py-1.5 rounded-xl bg-[var(--color-field)] text-white font-bold text-xs hover:bg-[var(--color-field-hover)] inline-flex items-center gap-1 shadow-xs"
@@ -167,7 +167,7 @@ export default function RegisterPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Mahmudul Hasan"
-              className="w-full px-4 py-3 rounded-xl border border-[var(--color-card-border)] font-semibold text-xs bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
+              className="w-full px-4 py-3 rounded-xl border border-[var(--color-card-border)] font-medium text-sm bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
             />
           </div>
 
@@ -181,7 +181,7 @@ export default function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="e.g. mahmudul@example.com"
-              className="w-full px-4 py-3 rounded-xl border border-[var(--color-card-border)] font-semibold text-xs bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
+              className="w-full px-4 py-3 rounded-xl border border-[var(--color-card-border)] font-medium text-sm bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
             />
           </div>
 
@@ -194,7 +194,7 @@ export default function RegisterPage() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+8801XXXXXXXXX"
-              className="w-full px-4 py-3 rounded-xl border border-[var(--color-card-border)] font-semibold text-xs bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
+              className="w-full px-4 py-3 rounded-xl border border-[var(--color-card-border)] font-medium text-sm bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
             />
           </div>
 
@@ -208,14 +208,14 @@ export default function RegisterPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Minimum 6 characters"
-              className="w-full px-4 py-3 rounded-xl border border-[var(--color-card-border)] font-mono text-xs bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
+              className="w-full px-4 py-3 rounded-xl border border-[var(--color-card-border)] font-mono text-sm bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="btn-press w-full py-3.5 rounded-2xl bg-[var(--color-field)] hover:bg-[var(--color-field-hover)] text-white font-bold text-xs tracking-wider uppercase shadow-md flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
+            className="btn-press w-full py-3.5 rounded-2xl bg-[var(--color-field)] hover:bg-[var(--color-field-hover)] text-white font-bold text-sm tracking-wider uppercase shadow-md flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
           >
             <span>{loading ? "Creating Account..." : `Register as ${role}`}</span>
             <ArrowRight className="w-4 h-4" />

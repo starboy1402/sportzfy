@@ -183,7 +183,7 @@ export default function OwnerSchedulePage() {
             <Lock className="w-4 h-4" />
             <span>Walk-In & Maintenance Locker</span>
           </div>
-          <h1 className="font-display text-4xl font-bold text-[var(--color-forest)] uppercase">
+          <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-[var(--color-forest)] uppercase">
             Slot Locker & Walk-in Bookings
           </h1>
           <p className="text-xs sm:text-sm text-[var(--color-ink-muted)] mt-1">
@@ -225,7 +225,7 @@ export default function OwnerSchedulePage() {
                 <select
                   value={selectedTurfId}
                   onChange={(e) => setSelectedTurfId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--color-card-border)] font-bold text-xs bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--color-card-border)] font-medium text-sm bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
                 >
                   {turfs.map((t) => (
                     <option key={t.id} value={t.id}>
@@ -244,7 +244,7 @@ export default function OwnerSchedulePage() {
                   type="date"
                   value={targetDate}
                   onChange={(e) => setTargetDate(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--color-card-border)] font-bold text-xs bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--color-card-border)] font-medium text-sm bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
                 />
               </div>
 
@@ -256,7 +256,7 @@ export default function OwnerSchedulePage() {
                 <select
                   value={startHour}
                   onChange={(e) => setStartHour(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--color-card-border)] font-bold text-xs bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--color-card-border)] font-medium text-sm bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
                 >
                   <option value="16">4:00 PM - 5:00 PM</option>
                   <option value="17">5:00 PM - 6:00 PM</option>
@@ -280,16 +280,16 @@ export default function OwnerSchedulePage() {
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   placeholder="e.g. Phone call reservation - Cash received"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--color-card-border)] font-medium text-xs bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--color-card-border)] font-medium text-sm bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-field)]"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="btn-press w-full py-3 rounded-xl bg-[var(--color-forest)] hover:bg-[var(--color-field)] text-white font-bold text-xs tracking-wide shadow-md flex items-center justify-center gap-2 mt-4 transition-colors disabled:opacity-50"
+                className="btn-press w-full py-3.5 rounded-xl bg-[var(--color-forest)] hover:bg-[var(--color-field)] text-white font-bold text-sm tracking-wide shadow-md flex items-center justify-center gap-2 mt-4 transition-colors disabled:opacity-50"
               >
-                <Lock className="w-3.5 h-3.5" />
+                <Lock className="w-4 h-4" />
                 <span>{isSubmitting ? "Locking..." : "Lock Slot Offline"}</span>
               </button>
             </form>
@@ -310,7 +310,7 @@ export default function OwnerSchedulePage() {
               <div className="py-12 text-center text-xs text-[var(--color-ink-muted)] space-y-2">
                 <ShieldCheck className="w-10 h-10 text-[var(--color-field)] mx-auto opacity-50" />
                 <p>No slots are currently blocked for this venue.</p>
-                <p className="text-[11px] text-[var(--color-ink-muted)]">
+                <p className="text-xs text-[var(--color-ink-muted)]">
                   All hours are open for players on the public site.
                 </p>
               </div>
@@ -341,18 +341,18 @@ export default function OwnerSchedulePage() {
                           <span className="font-display text-lg font-bold text-[var(--color-forest)]">
                             {dateLabel} • {timeLabel}
                           </span>
-                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
+                          <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">
                             LOCKED
                           </span>
                         </div>
-                        <p className="text-[11px] text-[var(--color-ink-muted)]">
+                        <p className="text-xs text-[var(--color-ink-muted)]">
                           Note: <span className="font-medium text-[var(--color-forest)]">{slot.reason}</span>
                         </p>
                       </div>
 
                       <button
                         onClick={() => handleUnblockSlot(slot.id)}
-                        className="btn-press self-start sm:self-auto px-3.5 py-1.5 rounded-xl bg-white border border-red-200 text-red-600 hover:bg-red-50 text-[11px] font-bold shadow-xs flex items-center gap-1.5 transition-colors"
+                        className="btn-press self-start sm:self-auto px-3.5 py-2 rounded-xl bg-white border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors"
                       >
                         <Unlock className="w-3.5 h-3.5" />
                         <span>Unlock for Online</span>

@@ -233,7 +233,7 @@ export default function TurfDetailPage({
                   <span className="px-2.5 py-1 rounded-full bg-[var(--color-field)] text-white font-bold text-xs uppercase tracking-wide inline-block mb-2">
                     {turf.pitchFormats}
                   </span>
-                  <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold uppercase leading-none">
+                  <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold uppercase leading-tight">
                     {turf.name}
                   </h1>
                   <p className="text-xs sm:text-sm text-emerald-100 flex items-center gap-1.5 mt-1">
@@ -245,7 +245,7 @@ export default function TurfDetailPage({
                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 text-[var(--color-forest)] text-xs font-bold shadow-xs shrink-0 self-start sm:self-auto">
                   <Star className="w-4 h-4 text-[var(--color-accent)] fill-[var(--color-accent)]" />
                   <span>{turf.rating.toFixed(1)}</span>
-                  <span className="text-[10px] text-[var(--color-ink-muted)]">
+                  <span className="text-xs text-[var(--color-ink-muted)]">
                     ({turf.reviewCount} reviews)
                   </span>
                 </div>
@@ -254,7 +254,7 @@ export default function TurfDetailPage({
 
             {/* About & Amenities */}
             <div className="bg-white p-6 rounded-3xl border border-[var(--color-card-border)] shadow-xs space-y-4">
-              <h3 className="font-display text-2xl font-bold text-[var(--color-forest)] uppercase">
+              <h3 className="font-display text-xl sm:text-2xl font-bold text-[var(--color-forest)] uppercase">
                 Pitch Overview & Specifications
               </h3>
               <p className="text-sm text-[var(--color-ink-muted)] leading-relaxed">
@@ -322,7 +322,7 @@ export default function TurfDetailPage({
                   <ShieldCheck className="w-5 h-5 text-[var(--color-field)] shrink-0" />
                   <span>Zero Double-Booking Guarantee</span>
                 </div>
-                <p className="text-[11px] leading-relaxed text-[var(--color-ink-muted)]">
+                <p className="text-xs leading-relaxed text-[var(--color-ink-muted)]">
                   When you select a slot, Sportzfy places an atomic <strong>5-minute hold</strong> while you confirm your bKash payment. No other user can take your slot.
                 </p>
               </div>
@@ -353,7 +353,7 @@ export default function TurfDetailPage({
                 <Clock className="w-4 h-4" />
                 <span>Real-Time Availability Engine</span>
               </div>
-              <h2 className="font-display text-3xl sm:text-4xl font-bold text-[var(--color-forest)] uppercase">
+              <h2 className="font-display text-2xl sm:text-3xl font-bold text-[var(--color-forest)] uppercase">
                 Select Your Playing Slot
               </h2>
               <p className="text-xs sm:text-sm text-[var(--color-ink-muted)]">
@@ -458,20 +458,20 @@ export default function TurfDetailPage({
                       </span>
 
                       {slot.isPeakHour && isAvailable && (
-                        <span className="px-2 py-0.5 rounded-full bg-[var(--color-accent)]/15 text-[var(--color-accent-hover)] font-bold text-[10px] flex items-center gap-1">
+                        <span className="px-2.5 py-0.5 rounded-full bg-[var(--color-accent)]/15 text-[var(--color-accent-hover)] font-bold text-xs flex items-center gap-1">
                           <Flame className="w-3 h-3 fill-[var(--color-accent)]" />
                           Peak
                         </span>
                       )}
 
                       {slot.status === "HELD" && (
-                        <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px]">
+                        <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-xs">
                           Hold Active
                         </span>
                       )}
 
                       {slot.status === "BOOKED" && (
-                        <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold text-[10px]">
+                        <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 font-bold text-xs">
                           Booked
                         </span>
                       )}
@@ -511,7 +511,7 @@ export default function TurfDetailPage({
                 <Clock className="w-5 h-5 text-[var(--color-field)]" />
               </div>
               <div className="flex flex-col">
-                <span className="text-[10px] font-bold uppercase text-[var(--color-ink-muted)] tracking-wider">
+                <span className="text-xs font-bold uppercase text-[var(--color-ink-muted)] tracking-wider">
                   Selected Playing Slot
                 </span>
                 <span className="font-display text-xl font-bold text-[var(--color-forest)] leading-none">

@@ -107,7 +107,7 @@ export default function BookingsClientList({
                     <span className="font-display text-2xl font-bold text-[var(--color-forest)] group-hover:text-[var(--color-field)] transition-colors">
                       {b.turf.name}
                     </span>
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold uppercase tracking-wider flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" />
                       {b.status}
                     </span>
@@ -130,7 +130,7 @@ export default function BookingsClientList({
                     </span>
                   </div>
 
-                  <div className="text-[11px] text-[var(--color-ink-muted)] flex items-center gap-2 pt-0.5">
+                  <div className="text-xs text-[var(--color-ink-muted)] flex items-center gap-2 pt-0.5">
                     <span className="font-mono font-bold text-[var(--color-forest)]">
                       Pass Ref: {b.referenceCode}
                     </span>
@@ -144,7 +144,7 @@ export default function BookingsClientList({
 
               {/* Price & Action */}
               <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 pt-3 sm:pt-0 border-[var(--color-card-border)] shrink-0">
-                <span className="text-[10px] uppercase font-bold text-[var(--color-ink-muted)]">
+                <span className="text-xs uppercase font-semibold text-[var(--color-ink-muted)]">
                   Paid via {b.paymentMethod}
                 </span>
                 <span className="font-display text-2xl font-bold text-[var(--color-forest)]">
@@ -220,7 +220,7 @@ export default function BookingsClientList({
                     {selectedBooking.referenceCode}
                   </span>
                 </div>
-                <p className="text-[11px] text-[var(--color-ink-muted)] mt-1">
+                <p className="text-xs text-[var(--color-ink-muted)] mt-1">
                   Present this QR code to the venue operator upon pitch arrival.
                 </p>
               </div>
@@ -228,7 +228,7 @@ export default function BookingsClientList({
               {/* Slot & Match Timing Grid */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3.5 rounded-2xl bg-[var(--color-paper)] border border-[var(--color-card-border)]">
-                  <span className="text-[10px] uppercase font-bold text-[var(--color-ink-muted)] flex items-center gap-1 mb-1">
+                  <span className="text-xs uppercase font-semibold text-[var(--color-ink-muted)] flex items-center gap-1 mb-1">
                     <Calendar className="w-3 h-3 text-[var(--color-field)]" />
                     Match Date
                   </span>
@@ -238,7 +238,7 @@ export default function BookingsClientList({
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-[var(--color-paper)] border border-[var(--color-card-border)]">
-                  <span className="text-[10px] uppercase font-bold text-[var(--color-ink-muted)] flex items-center gap-1 mb-1">
+                  <span className="text-xs uppercase font-semibold text-[var(--color-ink-muted)] flex items-center gap-1 mb-1">
                     <Clock className="w-3 h-3 text-[var(--color-field)]" />
                     Match Interval
                   </span>
@@ -284,7 +284,7 @@ export default function BookingsClientList({
 
               {/* Venue Amenities */}
               <div>
-                <span className="text-[11px] font-bold text-[var(--color-forest)] uppercase tracking-wider block mb-2">
+                <span className="text-xs font-bold text-[var(--color-forest)] uppercase tracking-wider block mb-2">
                   Venue Amenities Included:
                 </span>
                 <div className="flex flex-wrap gap-2 text-xs">

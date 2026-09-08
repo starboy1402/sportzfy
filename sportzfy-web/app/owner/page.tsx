@@ -55,11 +55,13 @@ interface OwnerData {
     id: string;
     turfName: string;
     targetWindow: string;
-    demandProbability: number;
+    demandTag?: string;
+    demandProbability?: number;
     currentRate: number;
     suggestedRate: number;
     recommendation: string;
-    confidenceScore: string;
+    tag?: string;
+    confidenceScore?: string;
   }>;
 }
 
@@ -127,11 +129,11 @@ export default function OwnerDashboardPage() {
               <Shield className="w-4 h-4 text-[var(--color-field)]" />
               <span>Venue Operator Console</span>
             </div>
-            <h1 className="font-display text-4xl sm:text-5xl font-bold text-[var(--color-forest)] uppercase leading-none">
+            <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-[var(--color-forest)] uppercase leading-tight">
               Welcome, {data.owner.name}
             </h1>
             <p className="text-xs sm:text-sm text-[var(--color-ink-muted)] mt-1">
-              Manage your turf schedules, monitor online bookings, and review AI dynamic pricing suggestions.
+              Manage your turf schedules, monitor online bookings, and optimize slot rates.
             </p>
           </div>
 
@@ -159,7 +161,7 @@ export default function OwnerDashboardPage() {
           {/* Revenue */}
           <div className="p-5 rounded-2xl bg-white border border-[var(--color-card-border)] shadow-xs flex flex-col justify-between gap-3">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
                 Recorded Revenue
               </span>
               <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center text-[var(--color-field)]">
@@ -167,10 +169,10 @@ export default function OwnerDashboardPage() {
               </div>
             </div>
             <div>
-              <span className="font-display text-3xl sm:text-4xl font-bold text-[var(--color-forest)]">
+              <span className="font-display text-2xl sm:text-3xl font-bold text-[var(--color-forest)]">
                 ৳{data.stats.totalRevenue.toLocaleString()}
               </span>
-              <span className="text-[10px] text-emerald-700 font-bold block mt-0.5">
+              <span className="text-xs text-emerald-700 font-semibold block mt-1">
                 100% Guaranteed Payout
               </span>
             </div>
@@ -179,7 +181,7 @@ export default function OwnerDashboardPage() {
           {/* Bookings */}
           <div className="p-5 rounded-2xl bg-white border border-[var(--color-card-border)] shadow-xs flex flex-col justify-between gap-3">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
                 Confirmed Matches
               </span>
               <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center text-blue-700">
@@ -187,10 +189,10 @@ export default function OwnerDashboardPage() {
               </div>
             </div>
             <div>
-              <span className="font-display text-3xl sm:text-4xl font-bold text-[var(--color-forest)]">
+              <span className="font-display text-2xl sm:text-3xl font-bold text-[var(--color-forest)]">
                 {data.stats.totalBookings}
               </span>
-              <span className="text-[10px] text-[var(--color-ink-muted)] font-semibold block mt-0.5">
+              <span className="text-xs text-[var(--color-ink-muted)] font-semibold block mt-1">
                 Zero double-bookings
               </span>
             </div>
@@ -199,7 +201,7 @@ export default function OwnerDashboardPage() {
           {/* Active Turfs */}
           <div className="p-5 rounded-2xl bg-white border border-[var(--color-card-border)] shadow-xs flex flex-col justify-between gap-3">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
                 Managed Pitches
               </span>
               <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center text-purple-700">
@@ -207,10 +209,10 @@ export default function OwnerDashboardPage() {
               </div>
             </div>
             <div>
-              <span className="font-display text-3xl sm:text-4xl font-bold text-[var(--color-forest)]">
+              <span className="font-display text-2xl sm:text-3xl font-bold text-[var(--color-forest)]">
                 {data.stats.totalVenues}
               </span>
-              <span className="text-[10px] text-[var(--color-field)] font-bold block mt-0.5">
+              <span className="text-xs text-[var(--color-field)] font-semibold block mt-1">
                 All Published & Live
               </span>
             </div>
@@ -219,7 +221,7 @@ export default function OwnerDashboardPage() {
           {/* Occupancy Rate */}
           <div className="p-5 rounded-2xl bg-white border border-[var(--color-card-border)] shadow-xs flex flex-col justify-between gap-3">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
                 Evening Occupancy
               </span>
               <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-[var(--color-accent)]">
@@ -227,17 +229,17 @@ export default function OwnerDashboardPage() {
               </div>
             </div>
             <div>
-              <span className="font-display text-3xl sm:text-4xl font-bold text-[var(--color-forest)]">
+              <span className="font-display text-2xl sm:text-3xl font-bold text-[var(--color-forest)]">
                 {data.stats.occupancyRate}%
               </span>
-              <span className="text-[10px] text-amber-700 font-bold block mt-0.5">
+              <span className="text-xs text-amber-700 font-semibold block mt-1">
                 Peak Prime Hours (8–11 PM)
               </span>
             </div>
           </div>
         </div>
 
-        {/* 2. AI DYNAMIC PRICING & DEMAND INTELLIGENCE WIDGET (Mandatory for Proposal & CUET Report!) */}
+        {/* 2. REVENUE OPTIMIZATION & RECOMMENDED RATES */}
         <section className="bg-gradient-to-br from-[var(--color-forest)] to-[var(--color-forest-dark)] text-white p-6 sm:p-8 rounded-3xl shadow-lg space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-800 pb-4">
             <div className="flex items-center gap-2.5">
@@ -245,17 +247,18 @@ export default function OwnerDashboardPage() {
                 <Sparkles className="w-5 h-5 fill-white" />
               </div>
               <div>
-                <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-300 block">
-                  Machine Learning Recommendation Engine
+                <span className="text-xs uppercase font-semibold tracking-wider text-emerald-300 block">
+                  Revenue Optimization
                 </span>
                 <h3 className="font-display text-2xl sm:text-3xl font-bold uppercase">
-                  AI Dynamic Pricing & Demand Suggestions
+                  Recommended Slot Rates
                 </h3>
               </div>
             </div>
 
-            <span className="px-3 py-1 rounded-full bg-emerald-900/80 border border-emerald-700 text-xs font-semibold text-emerald-200 self-start sm:self-auto">
-              Weekly Historical Model (scikit-learn)
+            <span className="px-3 py-1 rounded-full bg-emerald-900/80 border border-emerald-700 text-xs font-semibold text-emerald-200 self-start sm:self-auto flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Smart Pricing Active</span>
             </span>
           </div>
 
@@ -263,39 +266,43 @@ export default function OwnerDashboardPage() {
             {data.aiPricingInsights.map((insight) => (
               <div
                 key={insight.id}
-                className="p-5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 space-y-3"
+                className="p-5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 space-y-3 flex flex-col justify-between"
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-emerald-300">
-                    {insight.targetWindow}
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-[var(--color-accent)] text-[var(--color-forest-dark)] font-bold text-[11px]">
-                    {insight.demandProbability}% Demand Probability
-                  </span>
-                </div>
-
-                <div className="flex items-baseline gap-3 py-1">
-                  <div>
-                    <span className="text-[10px] uppercase text-emerald-200 block">Current Rate</span>
-                    <span className="font-display text-2xl font-bold line-through text-white/70">
-                      ৳{insight.currentRate}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-300">
+                      {insight.targetWindow}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-[var(--color-accent)] text-[var(--color-forest-dark)] font-bold text-xs">
+                      {insight.demandTag || "High Demand"}
                     </span>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-[var(--color-field)]" />
-                  <div>
-                    <span className="text-[10px] uppercase text-emerald-200 block">Suggested AI Price</span>
-                    <span className="font-display text-3xl font-bold text-[var(--color-field)]">
-                      ৳{insight.suggestedRate}
-                    </span>
+
+                  <div className="flex items-baseline gap-3 py-1">
+                    <div>
+                      <span className="text-xs uppercase text-emerald-200 block">Current Base</span>
+                      <span className="font-display text-2xl font-bold line-through text-white/70">
+                        ৳{insight.currentRate}
+                      </span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-[var(--color-field)]" />
+                    <div>
+                      <span className="text-xs uppercase text-emerald-200 block">Recommended Rate</span>
+                      <span className="font-display text-3xl font-bold text-[var(--color-field)]">
+                        ৳{insight.suggestedRate}
+                      </span>
+                    </div>
                   </div>
+
+                  <p className="text-xs text-emerald-100/90 leading-relaxed">
+                    {insight.recommendation}
+                  </p>
                 </div>
 
-                <p className="text-xs text-emerald-100/90 leading-relaxed">
-                  {insight.recommendation}
-                </p>
-
-                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-emerald-300">
-                  <span>Model Confidence: {insight.confidenceScore}</span>
+                <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs text-emerald-300">
+                  <span className="text-xs text-emerald-300/80 font-medium">
+                    {insight.tag || "Automated Rate Recommendation"}
+                  </span>
                   <Link
                     href={`/owner/schedule`}
                     className="font-bold underline hover:text-white"
@@ -331,10 +338,10 @@ export default function OwnerDashboardPage() {
                     alt={turf.name}
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-[var(--color-forest)] text-white text-[11px] font-bold">
+                  <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-[var(--color-forest)] text-white text-xs font-semibold">
                     {turf.pitchFormats}
                   </div>
-                  <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-emerald-500 text-white text-[11px] font-bold">
+                  <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-emerald-500 text-white text-xs font-semibold">
                     {turf.status}
                   </div>
                 </div>
@@ -386,7 +393,7 @@ export default function OwnerDashboardPage() {
         <section className="bg-white p-6 sm:p-8 rounded-3xl border border-[var(--color-card-border)] shadow-xs space-y-5">
           <div className="flex items-center justify-between border-b border-[var(--color-card-border)] pb-4">
             <div>
-              <span className="text-[10px] uppercase font-bold text-[var(--color-field)] tracking-wider block">
+              <span className="text-xs uppercase font-semibold text-[var(--color-field)] tracking-wider block">
                 Live Bookings Roster
               </span>
               <h3 className="font-display text-2xl sm:text-3xl font-bold text-[var(--color-forest)] uppercase">
@@ -414,7 +421,7 @@ export default function OwnerDashboardPage() {
                       <span className="font-display text-xl font-bold text-[var(--color-forest)]">
                         {b.turf.name}
                       </span>
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold">
                         {b.referenceCode}
                       </span>
                     </div>
@@ -433,7 +440,7 @@ export default function OwnerDashboardPage() {
 
                   <div className="flex items-center gap-4 self-end sm:self-auto">
                     <div className="text-right">
-                      <span className="text-[10px] uppercase font-bold text-[var(--color-ink-muted)] block">
+                      <span className="text-xs uppercase font-semibold text-[var(--color-ink-muted)] block">
                         Amount Paid
                       </span>
                       <span className="font-display text-2xl font-bold text-[var(--color-forest)]">

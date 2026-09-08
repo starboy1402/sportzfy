@@ -112,7 +112,7 @@ export default function MatchesPage() {
               <Zap className="w-4 h-4 fill-[var(--color-accent)]" />
               <span>Squad Matchmaking & Player Recruitment</span>
             </div>
-            <h1 className="font-display text-4xl sm:text-5xl font-bold text-[var(--color-forest)] uppercase leading-none">
+            <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-[var(--color-forest)] uppercase leading-tight">
               Open Matches & Squad Hub
             </h1>
             <p className="text-xs sm:text-sm text-[var(--color-ink-muted)] mt-1">
@@ -129,29 +129,27 @@ export default function MatchesPage() {
           </Link>
         </div>
 
-        {/* Tab Switcher: All Matches vs My Squads */}
-        <div className="flex items-center gap-2 border-b border-[var(--color-card-border)] pb-2 text-xs font-bold">
+        {/* Tab Switcher */}
+        <div className="flex items-center gap-2 border-b border-[var(--color-card-border)] pb-4">
           <button
-            type="button"
             onClick={() => setActiveTab("all")}
-            className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === "all"
                 ? "bg-[var(--color-forest)] text-white shadow-xs"
-                : "bg-white text-[var(--color-ink-muted)] border border-[var(--color-card-border)] hover:border-[var(--color-field)]"
+                : "bg-white text-[var(--color-ink-muted)] border border-[var(--color-card-border)] hover:text-[var(--color-forest)]"
             }`}
           >
-            Explore All Open Matches
+            All Open Matches ({matches.length})
           </button>
           <button
-            type="button"
             onClick={() => setActiveTab("my")}
-            className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === "my"
                 ? "bg-[var(--color-forest)] text-white shadow-xs"
-                : "bg-white text-[var(--color-ink-muted)] border border-[var(--color-card-border)] hover:border-[var(--color-field)]"
+                : "bg-white text-[var(--color-ink-muted)] border border-[var(--color-card-border)] hover:text-[var(--color-forest)]"
             }`}
           >
-            My Matches & Squads
+            My Squads & Matches
           </button>
         </div>
 
@@ -160,7 +158,7 @@ export default function MatchesPage() {
           <div className="bg-white p-4 rounded-2xl border border-[var(--color-card-border)] shadow-xs flex flex-wrap items-center justify-between gap-4">
             {/* Role Filter */}
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar text-xs">
-              <span className="font-bold text-[var(--color-ink-muted)] text-[11px] uppercase shrink-0">
+              <span className="font-bold text-[var(--color-ink-muted)] text-xs uppercase shrink-0">
                 Role Needed:
               </span>
               {["All", "Goalkeeper", "Midfielder", "Any"].map((r) => (
@@ -181,7 +179,7 @@ export default function MatchesPage() {
 
             {/* Format Filter */}
             <div className="flex items-center gap-2 text-xs">
-              <span className="font-bold text-[var(--color-ink-muted)] text-[11px] uppercase shrink-0">
+              <span className="font-bold text-[var(--color-ink-muted)] text-xs uppercase shrink-0">
                 Format:
               </span>
               {["All", "7v7", "6v6", "5v5"].map((f) => (
@@ -277,7 +275,7 @@ export default function MatchesPage() {
                         <span className="text-[var(--color-ink-muted)]">{m.area}</span>
                       </div>
 
-                      <div className="flex items-center justify-between text-[11px] pt-2 border-t border-[var(--color-card-border)]">
+                      <div className="flex items-center justify-between text-xs pt-2 border-t border-[var(--color-card-border)]">
                         <span className="text-[var(--color-ink-muted)] flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5 text-[var(--color-field)]" />
                           {dateStr} • {timeStr}
@@ -291,7 +289,7 @@ export default function MatchesPage() {
                     {/* Bottom: Split Price & Action */}
                     <div className="pt-2 flex items-center justify-between">
                       <div>
-                        <span className="text-[10px] uppercase font-bold text-[var(--color-ink-muted)] block">
+                        <span className="text-xs uppercase font-semibold text-[var(--color-ink-muted)] block">
                           Cost Per Player
                         </span>
                         <span className="font-display text-2xl font-bold text-[var(--color-forest)]">
@@ -328,7 +326,7 @@ export default function MatchesPage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between border-b border-[var(--color-card-border)] pb-3">
                     <div>
-                      <h3 className="font-display text-2xl font-bold text-[var(--color-forest)] uppercase">
+                      <h3 className="font-display text-xl sm:text-2xl font-bold text-[var(--color-forest)] uppercase">
                         👑 Matches I Am Hosting ({myHosting.length})
                       </h3>
                       <p className="text-xs text-[var(--color-ink-muted)]">
@@ -354,15 +352,15 @@ export default function MatchesPage() {
                             className="p-5 rounded-2xl bg-white border border-[var(--color-card-border)] shadow-xs flex flex-col justify-between gap-3 hover:border-[var(--color-field)] transition-all"
                           >
                             <div className="flex items-center justify-between">
-                              <span className="px-2.5 py-0.5 rounded-full bg-[var(--color-mint)] text-[var(--color-forest)] text-[10px] font-bold">
+                              <span className="px-2.5 py-0.5 rounded-full bg-[var(--color-mint)] text-[var(--color-forest)] text-xs font-semibold">
                                 {m.sportFormat} • ৳{m.costPerPlayer}/player
                               </span>
                               {pendingCount > 0 ? (
-                                <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold animate-pulse">
+                                <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold animate-pulse">
                                   {pendingCount} Pending Request{pendingCount > 1 ? "s" : ""}
                                 </span>
                               ) : (
-                                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold">
                                   All Reviewed
                                 </span>
                               )}
@@ -398,7 +396,7 @@ export default function MatchesPage() {
                 <div className="space-y-4 pt-4">
                   <div className="flex items-center justify-between border-b border-[var(--color-card-border)] pb-3">
                     <div>
-                      <h3 className="font-display text-2xl font-bold text-[var(--color-forest)] uppercase">
+                      <h3 className="font-display text-xl sm:text-2xl font-bold text-[var(--color-forest)] uppercase">
                         ⚽ Squads I Have Joined ({myJoined.length})
                       </h3>
                       <p className="text-xs text-[var(--color-ink-muted)]">
@@ -419,11 +417,11 @@ export default function MatchesPage() {
                           className="p-5 rounded-2xl bg-white border border-[var(--color-card-border)] shadow-xs flex flex-col justify-between gap-3"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="px-2.5 py-0.5 rounded-full bg-[var(--color-paper)] border border-[var(--color-card-border)] text-[var(--color-forest)] text-[10px] font-bold">
+                            <span className="px-2.5 py-0.5 rounded-full bg-[var(--color-paper)] border border-[var(--color-card-border)] text-[var(--color-forest)] text-xs font-semibold">
                               Role: {j.preferredRole}
                             </span>
                             <span
-                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                              className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                                 j.requestStatus === "ACCEPTED"
                                   ? "bg-emerald-100 text-emerald-800"
                                   : j.requestStatus === "REJECTED"

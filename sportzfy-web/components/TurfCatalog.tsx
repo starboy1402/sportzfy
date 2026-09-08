@@ -31,6 +31,8 @@ export interface TurfItem {
   hasChangingRoom: boolean;
   hasParking: boolean;
   hasWater: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export default function TurfCatalog({ turfs }: { turfs: TurfItem[] }) {
@@ -84,11 +86,11 @@ export default function TurfCatalog({ turfs }: { turfs: TurfItem[] }) {
 
           {/* City Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)] shrink-0">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-ink-muted)] shrink-0">
               City:
             </span>
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full text-xs">
-              {["All", "Chattogram", "Dhaka"].map((c) => (
+              {["All", "Chattogram", "Dhaka", "Sylhet"].map((c) => (
                 <button
                   key={c}
                   type="button"
@@ -107,11 +109,11 @@ export default function TurfCatalog({ turfs }: { turfs: TurfItem[] }) {
 
           {/* Pitch Format Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)] shrink-0">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-ink-muted)] shrink-0">
               Pitch:
             </span>
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full text-xs">
-              {["All", "7v7", "6v6", "5v5"].map((f) => (
+              {["All", "7v7", "6v6", "5v5", "Cricket Box"].map((f) => (
                 <button
                   key={f}
                   type="button"
@@ -192,7 +194,7 @@ export default function TurfCatalog({ turfs }: { turfs: TurfItem[] }) {
 
                 {/* Top Floating Badges */}
                 <div className="absolute top-3 left-3 flex items-center gap-2">
-                  <span className="px-2.5 py-1 rounded-full bg-[var(--color-forest)]/90 backdrop-blur-md text-white text-[11px] font-bold tracking-wide">
+                  <span className="px-2.5 py-1 rounded-full bg-[var(--color-forest)]/90 backdrop-blur-md text-white text-xs font-semibold tracking-wide">
                     {turf.pitchFormats}
                   </span>
                 </div>
@@ -200,7 +202,7 @@ export default function TurfCatalog({ turfs }: { turfs: TurfItem[] }) {
                 <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md shadow-xs text-xs font-bold text-[var(--color-forest)]">
                   <Star className="w-3.5 h-3.5 text-[var(--color-accent)] fill-[var(--color-accent)]" />
                   <span>{turf.rating.toFixed(1)}</span>
-                  <span className="text-[10px] text-[var(--color-ink-muted)]">({turf.reviewCount})</span>
+                  <span className="text-xs text-[var(--color-ink-muted)] font-medium">({turf.reviewCount})</span>
                 </div>
 
                 {/* Bottom area overlay */}
@@ -215,27 +217,27 @@ export default function TurfCatalog({ turfs }: { turfs: TurfItem[] }) {
               {/* Content Body */}
               <div className="p-5 flex flex-col flex-1 justify-between gap-4">
                 <div>
-                  <h3 className="font-display text-2xl font-bold text-[var(--color-forest)] leading-tight group-hover:text-[var(--color-field)] transition-colors">
+                  <h3 className="font-display text-xl sm:text-2xl font-bold text-[var(--color-forest)] leading-tight group-hover:text-[var(--color-field)] transition-colors">
                     {turf.name}
                   </h3>
-                  <p className="mt-1 text-xs text-[var(--color-ink-muted)] line-clamp-2 leading-relaxed">
+                  <p className="mt-1 text-sm text-[var(--color-ink-muted)] line-clamp-2 leading-relaxed">
                     {turf.description}
                   </p>
 
                   {/* Amenities Pills */}
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {turf.hasFloodlights && (
-                      <span className="px-2 py-0.5 rounded-md bg-[var(--color-mint)] text-[var(--color-forest)] text-[10px] font-bold">
+                      <span className="px-2.5 py-1 rounded-md bg-[var(--color-mint)] text-[var(--color-forest)] text-xs font-medium">
                         ⚡ Floodlights
                       </span>
                     )}
                     {turf.hasParking && (
-                      <span className="px-2 py-0.5 rounded-md bg-[var(--color-mint)] text-[var(--color-forest)] text-[10px] font-bold">
+                      <span className="px-2.5 py-1 rounded-md bg-[var(--color-mint)] text-[var(--color-forest)] text-xs font-medium">
                         🅿 Parking
                       </span>
                     )}
                     {turf.hasChangingRoom && (
-                      <span className="px-2 py-0.5 rounded-md bg-[var(--color-mint)] text-[var(--color-forest)] text-[10px] font-bold">
+                      <span className="px-2.5 py-1 rounded-md bg-[var(--color-mint)] text-[var(--color-forest)] text-xs font-medium">
                         🚿 Changing Room
                       </span>
                     )}
@@ -245,7 +247,7 @@ export default function TurfCatalog({ turfs }: { turfs: TurfItem[] }) {
                 {/* Bottom Price & CTA */}
                 <div className="pt-3 border-t border-[var(--color-card-border)] flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-[var(--color-ink-muted)] block">
+                    <span className="text-xs uppercase font-semibold text-[var(--color-ink-muted)] block">
                       Hourly Rate
                     </span>
                     <div className="flex items-baseline gap-0.5">

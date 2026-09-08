@@ -277,28 +277,28 @@ export default function MatchDetailPage({
             {/* Match Facts Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
               <div className="p-3.5 rounded-2xl bg-[var(--color-mint)] border border-[var(--color-card-border)]">
-                <span className="text-[10px] uppercase font-bold text-[var(--color-ink-muted)] block">
+                <span className="text-xs uppercase font-semibold text-[var(--color-ink-muted)] block mb-1">
                   Date & Time
                 </span>
                 <span className="font-bold text-[var(--color-forest)]">{dateStr} • {timeStr}</span>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-[var(--color-mint)] border border-[var(--color-card-border)]">
-                <span className="text-[10px] uppercase font-bold text-[var(--color-ink-muted)] block">
+                <span className="text-xs uppercase font-semibold text-[var(--color-ink-muted)] block mb-1">
                   Pitch Format
                 </span>
                 <span className="font-bold text-[var(--color-forest)]">{match.sportFormat} Match</span>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-[var(--color-mint)] border border-[var(--color-card-border)]">
-                <span className="text-[10px] uppercase font-bold text-[var(--color-ink-muted)] block">
+                <span className="text-xs uppercase font-semibold text-[var(--color-ink-muted)] block mb-1">
                   Squad Size
                 </span>
                 <span className="font-bold text-[var(--color-forest)]">{match.totalSpots} Players</span>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-[var(--color-mint)] border border-[var(--color-card-border)]">
-                <span className="text-[10px] uppercase font-bold text-[var(--color-ink-muted)] block">
+                <span className="text-xs uppercase font-semibold text-[var(--color-ink-muted)] block mb-1">
                   Split Cost
                 </span>
                 <span className="font-display text-xl font-bold text-[var(--color-field)]">
@@ -420,10 +420,10 @@ export default function MatchDetailPage({
             {/* Host Captain Jersey Card */}
             <div className="p-4 rounded-2xl bg-[var(--color-mint)] border-2 border-[var(--color-field)]/40 flex flex-col justify-between gap-3 relative shadow-xs">
               <div className="flex items-center justify-between">
-                <span className="px-2.5 py-0.5 rounded-full bg-[var(--color-accent)] text-[var(--color-forest-dark)] text-[10px] font-bold uppercase tracking-wider">
+                <span className="px-2.5 py-0.5 rounded-full bg-[var(--color-accent)] text-[var(--color-forest-dark)] text-xs font-semibold uppercase tracking-wider">
                   👑 Captain & Host
                 </span>
-                <span className="text-[10px] font-bold text-[var(--color-field)] uppercase">Leader</span>
+                <span className="text-xs font-semibold text-[var(--color-field)] uppercase">Leader</span>
               </div>
 
               <div>
@@ -436,7 +436,7 @@ export default function MatchDetailPage({
                 </p>
               </div>
 
-              <div className="pt-2 border-t border-[var(--color-card-border)]/60 text-[11px] text-[var(--color-forest)] font-semibold">
+              <div className="pt-2 border-t border-[var(--color-card-border)]/60 text-xs text-[var(--color-forest)] font-semibold">
                 Pitch Booking Host
               </div>
             </div>
@@ -448,10 +448,10 @@ export default function MatchDetailPage({
                 className="p-4 rounded-2xl bg-white border border-[var(--color-card-border)] hover:border-[var(--color-field)] flex flex-col justify-between gap-3 shadow-xs transition-all"
               >
                 <div className="flex items-center justify-between">
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase">
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold uppercase">
                     {player.preferredRole}
                   </span>
-                  <span className="px-2 py-0.5 rounded-full bg-[var(--color-mint)] text-[var(--color-forest)] text-[10px] font-bold">
+                  <span className="px-2 py-0.5 rounded-full bg-[var(--color-mint)] text-[var(--color-forest)] text-xs font-semibold">
                     Confirmed
                   </span>
                 </div>
@@ -468,19 +468,19 @@ export default function MatchDetailPage({
 
                 {isCaptain ? (
                   <div className="pt-2 border-t border-[var(--color-card-border)] flex items-center justify-between">
-                    <span className="text-[10px] text-[var(--color-ink-muted)]">Captain Controls:</span>
+                    <span className="text-xs text-[var(--color-ink-muted)]">Captain Controls:</span>
                     <button
                       type="button"
                       onClick={() => handleDecision(player.id, "REJECTED")}
-                      className="btn-press px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-[11px] font-bold flex items-center gap-1 transition-colors"
+                      className="btn-press px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold flex items-center gap-1 transition-colors"
                       title="Remove player and restore open spot"
                     >
-                      <UserMinus className="w-3 h-3" />
+                      <UserMinus className="w-3.5 h-3.5" />
                       <span>Remove</span>
                     </button>
                   </div>
                 ) : (
-                  <div className="pt-2 border-t border-[var(--color-card-border)] text-[11px] text-emerald-800 font-semibold">
+                  <div className="pt-2 border-t border-[var(--color-card-border)] text-xs text-emerald-800 font-semibold">
                     Squad Member
                   </div>
                 )}
@@ -497,10 +497,10 @@ export default function MatchDetailPage({
                   {acceptedPlayers.length + 2 + idx}
                 </div>
                 <div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-forest)] block">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-forest)] block">
                     Open Spot
                   </span>
-                  <span className="text-[10px] text-[var(--color-ink-muted)] font-medium">
+                  <span className="text-xs text-[var(--color-ink-muted)] font-medium">
                     Looking for {match.requiredRole}
                   </span>
                 </div>
@@ -508,7 +508,7 @@ export default function MatchDetailPage({
                   <button
                     type="button"
                     onClick={() => setShowJoinModal(true)}
-                    className="text-[11px] font-bold text-[var(--color-field)] hover:underline"
+                    className="text-xs font-semibold text-[var(--color-field)] hover:underline"
                   >
                     Apply for this spot →
                   </button>
@@ -523,7 +523,7 @@ export default function MatchDetailPage({
           <section className="bg-white p-6 sm:p-8 rounded-3xl border border-[var(--color-card-border)] shadow-xs space-y-4 anim-rise">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--color-card-border)] pb-4">
               <div>
-                <span className="text-[10px] uppercase font-bold text-[var(--color-accent-hover)] tracking-wider block">
+                <span className="text-xs uppercase font-bold text-[var(--color-accent-hover)] tracking-wider block">
                   👑 Captain Approval Console
                 </span>
                 <h3 className="font-display text-2xl font-bold text-[var(--color-forest)] uppercase">
@@ -553,12 +553,12 @@ export default function MatchDetailPage({
                         <span className="font-bold text-[var(--color-forest)] text-sm">
                           {req.user.name}
                         </span>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
                           PENDING REVIEW
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-3 text-[11px] text-[var(--color-ink-muted)]">
+                      <div className="flex items-center gap-3 text-xs text-[var(--color-ink-muted)]">
                         <span>
                           Applied as: <strong>{req.preferredRole}</strong>
                         </span>
@@ -650,11 +650,11 @@ export default function MatchDetailPage({
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-[var(--color-paper)] border border-[var(--color-card-border)] space-y-1">
-                <span className="text-[10px] uppercase font-bold text-[var(--color-ink-muted)] block">
+              <div className="p-3.5 rounded-xl bg-[var(--color-paper)] border border-[var(--color-card-border)] space-y-1">
+                <span className="text-xs uppercase font-semibold text-[var(--color-ink-muted)] block">
                   Match Rules & Cost
                 </span>
-                <p className="text-[11px] text-[var(--color-forest)] font-medium">
+                <p className="text-xs text-[var(--color-forest)] font-medium">
                   Player split cost is <strong>৳{match.costPerPlayer}</strong> paid at venue. The captain will review your application.
                 </p>
               </div>
