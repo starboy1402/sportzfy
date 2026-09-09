@@ -5,7 +5,7 @@ export interface EdgeSessionUser {
   role: "CUSTOMER" | "OWNER" | "ADMIN";
 }
 
-const SESSION_SECRET = process.env.SESSION_SECRET || "sportzfy_super_secret_hmac_key_chattogram_2026";
+const SESSION_SECRET = process.env.SESSION_SECRET || "sportzfy_prod_hmac_secret_2026_d78f9e1b2c3a4d5e6f7a8b9c0d1e2f3a";
 
 /**
  * Edge-compatible cryptographic session verification using Web Crypto API
