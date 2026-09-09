@@ -70,6 +70,14 @@ async function main() {
       password: defaultHashedPassword,
       role: "OWNER",
       avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80",
+      profile: {
+        create: {
+          bio: "Managing Director at Eco Sports Arena. Dedicated to providing premier artificial grass football grounds in Chattogram.",
+          preferredFormat: "7v7",
+          favoritePosition: "Midfielder",
+          preferredCity: "Chattogram",
+        },
+      },
     },
   });
 
@@ -80,10 +88,77 @@ async function main() {
       phone: "+8801999887766",
       password: defaultHashedPassword,
       role: "ADMIN",
+      avatarUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop&q=80",
+      profile: {
+        create: {
+          bio: "Sportzfy Platform Operations & Tournament Coordinator.",
+          preferredFormat: "7v7",
+          favoritePosition: "Goalkeeper",
+          preferredCity: "Chattogram",
+        },
+      },
     },
   });
 
-  console.log("✓ Created Users (player@sportzfy.com, adiba@cuet.com, owner@sportzfy.com, admin@sportzfy.com)");
+  const tanvir = await prisma.user.create({
+    data: {
+      email: "tanvir@gmail.com",
+      name: "Tanvir Hasan",
+      phone: "+8801912345678",
+      password: defaultHashedPassword,
+      role: "CUSTOMER",
+      avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80",
+      profile: {
+        create: {
+          bio: "Competitive futsal goalkeeper playing in corporate & university tournaments.",
+          preferredFormat: "6v6",
+          favoritePosition: "Goalkeeper",
+          preferredCity: "Dhaka",
+        },
+      },
+    },
+  });
+
+  // Create community squad players for matchmaking squads
+  const squadPlayersRaw = [
+    { name: "Fahim Shahriar", email: "fahim@sportzfy.com", role: "Midfielder", format: "7v7" },
+    { name: "Nafis Imtiaz", email: "nafis@sportzfy.com", role: "Striker", format: "7v7" },
+    { name: "Shakil Ahmed", email: "shakil@sportzfy.com", role: "Defender", format: "7v7" },
+    { name: "Abrar Hossain", email: "abrar@sportzfy.com", role: "Midfielder", format: "6v6" },
+    { name: "Mahir Faisal", email: "mahir@sportzfy.com", role: "Defender", format: "7v7" },
+    { name: "Zubair Rahman", email: "zubair@sportzfy.com", role: "Striker", format: "6v6" },
+    { name: "Rafi Chowdhury", email: "rafi@sportzfy.com", role: "Midfielder", format: "7v7" },
+    { name: "Saadman Karim", email: "saadman@sportzfy.com", role: "Goalkeeper", format: "7v7" },
+    { name: "Tawsif Reza", email: "tawsif@sportzfy.com", role: "Defender", format: "6v6" },
+    { name: "Rayhan Kabir", email: "rayhan@sportzfy.com", role: "Striker", format: "7v7" },
+    { name: "Munim Khan", email: "munim@sportzfy.com", role: "Midfielder", format: "7v7" },
+    { name: "Anik Barua", email: "anik@sportzfy.com", role: "Defender", format: "6v6" },
+    { name: "Siam Al-Hasan", email: "siam@sportzfy.com", role: "Goalkeeper", format: "7v7" },
+  ];
+
+  const squadUsers = [];
+  for (const sp of squadPlayersRaw) {
+    const u = await prisma.user.create({
+      data: {
+        email: sp.email,
+        name: sp.name,
+        phone: `+88018${Math.floor(10000000 + Math.random() * 90000000)}`,
+        password: defaultHashedPassword,
+        role: "CUSTOMER",
+        profile: {
+          create: {
+            bio: `Amateur football enthusiast playing ${sp.format} regularly.`,
+            preferredFormat: sp.format,
+            favoritePosition: sp.role,
+            preferredCity: "Chattogram",
+          },
+        },
+      },
+    });
+    squadUsers.push(u);
+  }
+
+  console.log(`✓ Created Core & Squad Users (${squadUsers.length + 5} total with 100% 1:1 Profiles)`);
 
   // 2. 20 Authentic Venues with Precise GPS Coordinates & Pitch Formats
   const turfsData = [
@@ -610,156 +685,299 @@ async function main() {
   }
   console.log(`✓ Seeded ${createdTurfs.length} Turfs across Chattogram (11), Dhaka (7), and Sylhet (2)`);
 
-  // 3. Generate 5,000+ Historical Bookings across 60 Days
-  console.log("⚡ Generating 5,000+ realistic historical bookings across 60 days...");
-  const bookingsToInsert: {
-    referenceCode: string;
+  // 3. Seed AvailabilityRules (7 days/week, 16:00 to 25:00 BST) for all 20 Turfs
+  console.log("⚡ Generating full 7-day AvailabilityRules for all 20 turfs...");
+  const availabilityRulesData: {
     turfId: string;
-    userId: string;
-    startTime: Date;
-    endTime: Date;
-    totalAmount: number;
-    status: string;
-    paymentMethod: string;
-    transactionId: string;
-    createdAt: Date;
-    updatedAt: Date;
+    dayOfWeek: number;
+    openHour: number;
+    closeHour: number;
+    hourlyRate: number;
   }[] = [];
 
+  for (const turf of createdTurfs) {
+    for (let day = 0; day <= 6; day++) {
+      availabilityRulesData.push({
+        turfId: turf.id,
+        dayOfWeek: day,
+        openHour: 16,
+        closeHour: 25,
+        hourlyRate: turf.basePricePerHour,
+      });
+    }
+  }
+  await prisma.availabilityRule.createMany({ data: availabilityRulesData });
+  console.log(`✓ Seeded ${availabilityRulesData.length} AvailabilityRules (7 days across 20 turfs)`);
+
+  // 4. Seed BlockedIntervals for venue maintenance and private events
+  const blockedData = [
+    {
+      turfId: createdTurfs[0].id, // Eco Sports Halishahar
+      startTime: new Date(Date.now() + 2 * 86400000 + 4 * 3600000), // In 2 days 4 PM
+      endTime: new Date(Date.now() + 2 * 86400000 + 6 * 3600000), // 6 PM
+      reason: "Private Corporate Futsal Tournament",
+    },
+    {
+      turfId: createdTurfs[1].id, // Apollo Kazir Dewri
+      startTime: new Date(Date.now() + 3 * 86400000 + 2 * 3600000), // In 3 days 2 PM
+      endTime: new Date(Date.now() + 3 * 86400000 + 4 * 3600000), // 4 PM
+      reason: "Pitch Turf Grooming & Floodlight Maintenance",
+    },
+    {
+      turfId: createdTurfs[11].id, // Dhanmondi Champions Field
+      startTime: new Date(Date.now() + 5 * 86400000 + 5 * 3600000),
+      endTime: new Date(Date.now() + 5 * 86400000 + 7 * 3600000),
+      reason: "Dhaka Inter-College Derby Final",
+    },
+  ];
+  await prisma.blockedInterval.createMany({ data: blockedData });
+  console.log(`✓ Seeded ${blockedData.length} BlockedIntervals`);
+
+  // 5. Seed Clean 100% Relational Triad: Holds -> PaymentAttempts -> Bookings
+  console.log("⚡ Generating 160 realistic past & upcoming bookings with 100% relational integrity...");
+  const customerUsers = [player, adiba, tanvir, ...squadUsers];
+  
+  const holdsToInsert: any[] = [];
+  const bookingsToInsert: any[] = [];
+  const paymentsToInsert: any[] = [];
+  
+  let counter = 0;
   const now = new Date();
-  const playerIds = [player.id, adiba.id];
 
-  // Loop over 60 days back (from day 60 ago to day 1 ago)
-  for (let dayOffset = 60; dayOffset >= 1; dayOffset--) {
-    const targetDate = new Date(now.getTime() - dayOffset * 24 * 60 * 60 * 1000);
-    // Bangladesh Standard Time (+6 hours)
-    const bstTargetDate = new Date(targetDate.getTime() + 6 * 60 * 60 * 1000);
-    const dayOfWeek = bstTargetDate.getUTCDay(); // 0 = Sun, 5 = Fri, 6 = Sat
-    const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+  // A. Past 28 Days: 7 bookings per turf = 140 historical bookings
+  for (let turfIdx = 0; turfIdx < createdTurfs.length; turfIdx++) {
+    const turf = createdTurfs[turfIdx];
+    // Spread 7 bookings over the past 28 days
+    for (let bIdx = 0; bIdx < 7; bIdx++) {
+      counter++;
+      const dayOffset = 1 + bIdx * 4 + (turfIdx % 3); // 1 to 28 days ago
+      const targetDate = new Date(now.getTime() - dayOffset * 86400000);
+      const bstHour = 17 + ((bIdx * 2 + turfIdx) % 7); // 17:00 to 23:00 BST
+      
+      const slotStart = new Date(targetDate);
+      slotStart.setUTCHours(bstHour - 6, 0, 0, 0); // UTC = BST - 6
+      const slotEnd = new Date(slotStart.getTime() + 3600000);
+      
+      const isPrimeHour = bstHour >= 20 && bstHour <= 22;
+      const dayOfWeek = (slotStart.getUTCDay() + 6) % 7; // BST day
+      const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+      let finalPrice = turf.basePricePerHour;
+      if (isWeekend || isPrimeHour) finalPrice += 150;
 
-    // Simulate weather: 10% chance of rain on that day
-    const isRainyDay = (dayOffset % 9 === 0);
+      const user = customerUsers[(counter + turfIdx) % customerUsers.length];
+      const holdId = `seed_hold_${counter.toString().padStart(4, "0")}`;
+      const bookingId = `seed_book_${counter.toString().padStart(4, "0")}`;
+      const paymentId = `seed_pay_${counter.toString().padStart(4, "0")}`;
+      
+      const hexSuffix = ((counter * 7919 + turfIdx * 3571) % 65536).toString(16).toUpperCase().padStart(4, "0");
+      const refCode = `SPZ-26-${(turfIdx + 1).toString().padStart(2, "0")}-${dayOffset.toString().padStart(2, "0")}${bstHour}-${hexSuffix}`;
+      const trxId = `TRX${(turfIdx + 1).toString().padStart(2, "0")}${dayOffset.toString().padStart(2, "0")}${bstHour}${hexSuffix}`;
+      const method = counter % 4 === 0 ? "NAGAD" : "BKASH";
 
-    // Operating hours: 16 (4 PM) through 23 (11 PM) -> 8 slots
-    const operatingHours = [16, 17, 18, 19, 20, 21, 22, 23];
+      const bookingCreated = new Date(slotStart.getTime() - 86400000);
 
-    for (let turfIdx = 0; turfIdx < createdTurfs.length; turfIdx++) {
-      const turf = createdTurfs[turfIdx];
-      const isHighRated = turf.rating >= 4.8;
+      // 1. Hold
+      holdsToInsert.push({
+        id: holdId,
+        turfId: turf.id,
+        userId: user.id,
+        startTime: slotStart,
+        endTime: slotEnd,
+        price: finalPrice,
+        expiresAt: new Date(slotStart.getTime() + 300000),
+        status: "CONSUMED",
+        createdAt: bookingCreated,
+      });
 
-      for (const bstHour of operatingHours) {
-        const isPrimeHour = bstHour >= 20 && bstHour <= 22;
+      // 2. Booking
+      bookingsToInsert.push({
+        id: bookingId,
+        referenceCode: refCode,
+        turfId: turf.id,
+        userId: user.id,
+        holdId: holdId,
+        startTime: slotStart,
+        endTime: slotEnd,
+        totalAmount: finalPrice,
+        status: "CONFIRMED",
+        paymentMethod: method,
+        transactionId: trxId,
+        createdAt: bookingCreated,
+        updatedAt: bookingCreated,
+      });
 
-        // Base booking likelihood:
-        // Weekends: 85%
-        // Weekday Prime (8-11 PM): 80%
-        // Weekday Regular: 45%
-        let bookingProb = isWeekend ? 0.85 : (isPrimeHour ? 0.80 : 0.45);
-        if (isHighRated) bookingProb += 0.08;
-        if (isRainyDay) bookingProb -= 0.25;
-
-        // Seed determinism check
-        const pseudoRand = ((dayOffset * 31 + turfIdx * 17 + bstHour * 7) % 100) / 100;
-        if (pseudoRand < bookingProb) {
-          // Construct UTC timestamp corresponding to bstHour on targetDate
-          const slotStart = new Date(targetDate);
-          // bstHour in UTC is (bstHour - 6)
-          slotStart.setUTCHours(bstHour - 6, 0, 0, 0);
-          const slotEnd = new Date(slotStart.getTime() + 60 * 60 * 1000);
-
-          // Pricing calculation
-          let finalPrice = turf.basePricePerHour;
-          if (isWeekend || isPrimeHour) {
-            finalPrice += 150;
-          } else if (isRainyDay) {
-            finalPrice -= 150;
-          }
-
-          const userId = playerIds[(dayOffset + turfIdx + bstHour) % playerIds.length];
-          const hashSuffix = ((dayOffset * 7919 + turfIdx * 3571 + bstHour * 23) % 65536)
-            .toString(16)
-            .toUpperCase()
-            .padStart(4, "0");
-          const refCode = `SPZ-26-${(turfIdx + 1).toString().padStart(2, "0")}-${dayOffset.toString().padStart(2, "0")}${bstHour}-${hashSuffix}`;
-          const trxId = `TRX${(turfIdx + 1).toString().padStart(2, "0")}${dayOffset.toString().padStart(2, "0")}${bstHour}${hashSuffix}`;
-
-          const bookingCreated = new Date(slotStart.getTime() - (1 + (dayOffset % 3)) * 86400000);
-
-          bookingsToInsert.push({
-            referenceCode: refCode,
-            turfId: turf.id,
-            userId,
-            startTime: slotStart,
-            endTime: slotEnd,
-            totalAmount: finalPrice,
-            status: "CONFIRMED",
-            paymentMethod: "BKASH",
-            transactionId: trxId,
-            createdAt: bookingCreated,
-            updatedAt: bookingCreated,
-          });
-        }
-      }
+      // 3. PaymentAttempt
+      paymentsToInsert.push({
+        id: paymentId,
+        bookingId: bookingId,
+        holdId: holdId,
+        provider: method,
+        accountNumber: user.phone || "01812345678",
+        amount: finalPrice,
+        status: "SUCCEEDED",
+        idempotencyKey: `idemp_${bookingId}`,
+        createdAt: bookingCreated,
+      });
     }
   }
 
-  console.log(`Generated ${bookingsToInsert.length} synthetic bookings. Batch inserting in 1,000-record chunks...`);
+  // B. Upcoming Bookings (Tonight, Tomorrow, and This Weekend) for Owner & Player dashboards
+  const upcomingDefinitions = [
+    { turfIdx: 0, hoursFromNow: 8, user: player }, // Eco Sports tonight
+    { turfIdx: 0, hoursFromNow: 32, user: adiba }, // Eco Sports tomorrow
+    { turfIdx: 1, hoursFromNow: 12, user: tanvir }, // Apollo Kazir Dewri
+    { turfIdx: 2, hoursFromNow: 10, user: player }, // Chandgaon tonight
+    { turfIdx: 9, hoursFromNow: 48, user: player }, // Patenga cricket
+    { turfIdx: 11, hoursFromNow: 24, user: tanvir }, // Dhanmondi Dhaka
+    { turfIdx: 17, hoursFromNow: 30, user: adiba }, // Shahjalal Sylhet
+  ];
 
-  // Batch insertion in chunks of 1,000 to prevent Postgres parameter limit crashes
-  const CHUNK_SIZE = 1000;
-  for (let i = 0; i < bookingsToInsert.length; i += CHUNK_SIZE) {
-    const chunk = bookingsToInsert.slice(i, i + CHUNK_SIZE);
-    await prisma.booking.createMany({
-      data: chunk,
-      skipDuplicates: true,
+  for (const up of upcomingDefinitions) {
+    counter++;
+    const turf = createdTurfs[up.turfIdx];
+    const slotStart = new Date(now.getTime() + up.hoursFromNow * 3600000);
+    slotStart.setMinutes(0, 0, 0);
+    const slotEnd = new Date(slotStart.getTime() + 3600000);
+
+    const holdId = `seed_hold_${counter.toString().padStart(4, "0")}`;
+    const bookingId = `seed_book_${counter.toString().padStart(4, "0")}`;
+    const paymentId = `seed_pay_${counter.toString().padStart(4, "0")}`;
+
+    const hexSuffix = ((counter * 7919) % 65536).toString(16).toUpperCase().padStart(4, "0");
+    const refCode = `SPZ-2026-UP${(up.turfIdx + 1).toString().padStart(2, "0")}-${hexSuffix}`;
+    const trxId = `TRXUP${(up.turfIdx + 1).toString().padStart(2, "0")}${hexSuffix}`;
+
+    holdsToInsert.push({
+      id: holdId,
+      turfId: turf.id,
+      userId: up.user.id,
+      startTime: slotStart,
+      endTime: slotEnd,
+      price: turf.basePricePerHour,
+      expiresAt: new Date(now.getTime() + 300000),
+      status: "CONSUMED",
+      createdAt: now,
     });
-    console.log(`  ✓ Inserted batch ${Math.floor(i / CHUNK_SIZE) + 1} (${chunk.length} bookings)`);
+
+    bookingsToInsert.push({
+      id: bookingId,
+      referenceCode: refCode,
+      turfId: turf.id,
+      userId: up.user.id,
+      holdId: holdId,
+      startTime: slotStart,
+      endTime: slotEnd,
+      totalAmount: turf.basePricePerHour,
+      status: "CONFIRMED",
+      paymentMethod: "BKASH",
+      transactionId: trxId,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    paymentsToInsert.push({
+      id: paymentId,
+      bookingId: bookingId,
+      holdId: holdId,
+      provider: "BKASH",
+      accountNumber: up.user.phone || "01812345678",
+      amount: turf.basePricePerHour,
+      status: "SUCCEEDED",
+      idempotencyKey: `idemp_${bookingId}`,
+      createdAt: now,
+    });
   }
 
-  const totalBookings = await prisma.booking.count();
-  console.log(`✓ Confirmed total bookings in database: ${totalBookings}`);
+  // Insert Triad
+  console.log(`Inserting ${holdsToInsert.length} Holds...`);
+  await prisma.hold.createMany({ data: holdsToInsert });
+  console.log(`Inserting ${bookingsToInsert.length} Bookings...`);
+  await prisma.booking.createMany({ data: bookingsToInsert });
+  console.log(`Inserting ${paymentsToInsert.length} PaymentAttempts...`);
+  await prisma.paymentAttempt.createMany({ data: paymentsToInsert });
+  console.log("✓ Successfully seeded 100% Relational Triad: Holds, Bookings, and Payments!");
 
-  // 4. Sample Verified Reviews
-  await prisma.review.create({
-    data: {
-      turfId: createdTurfs[0].id, // Halishahar
+  // 6. Seed Verified Reviews (Linked 1:1 to authentic bookings)
+  console.log("⚡ Seeding authentic reviews linked 1:1 to verified bookings...");
+  const reviewsData = [
+    {
+      turfId: createdTurfs[0].id,
+      bookingId: bookingsToInsert[0].id,
       userId: player.id,
       rating: 5,
       comment: "Best turf in Halishahar! The new LED lights make night games incredible, and the ball roll is super consistent.",
     },
-  });
-
-  await prisma.review.create({
-    data: {
+    {
+      turfId: createdTurfs[0].id,
+      bookingId: bookingsToInsert[1].id,
+      userId: adiba.id,
+      rating: 5,
+      comment: "Super clean dressing rooms and crisp boundary lines. Great venue for weekend 7v7 friendly derbies!",
+    },
+    {
+      turfId: createdTurfs[1].id,
+      bookingId: bookingsToInsert[7].id,
+      userId: tanvir.id,
+      rating: 5,
+      comment: "Centrally located next to MA Aziz Stadium. High bounce artificial grass with zero dead spots.",
+    },
+    {
+      turfId: createdTurfs[2].id,
+      bookingId: bookingsToInsert[14].id,
+      userId: player.id,
+      rating: 5,
+      comment: "Chandgaon zone is great for high-pace futsal. Plenty of bike parking and cold water available.",
+    },
+    {
       turfId: createdTurfs[10].id, // CUET
+      bookingId: bookingsToInsert[70].id,
       userId: adiba.id,
       rating: 5,
       comment: "CUET sports ground is unbeatable for engineering derby matches! Great floodlights and friendly management.",
     },
-  });
-
-  await prisma.review.create({
-    data: {
-      turfId: createdTurfs[11].id, // Dhanmondi
-      userId: player.id,
+    {
+      turfId: createdTurfs[11].id, // Dhanmondi Champions Field
+      bookingId: bookingsToInsert[77].id,
+      userId: tanvir.id,
       rating: 5,
       comment: "Dhanmondi Champions has the best shock-absorption system in Dhaka. Perfect for 5v5 tournament finals.",
     },
-  });
+    {
+      turfId: createdTurfs[17].id, // Shahjalal Upashahar Sylhet
+      bookingId: bookingsToInsert[119].id,
+      userId: player.id,
+      rating: 5,
+      comment: "Beautiful scenic pitch in Upashahar. Floodlights are bright and the imported grass is gentle on knees.",
+    },
+  ];
 
-  // 5. Open Matchmaking Community Posts
-  const tonight = new Date();
-  tonight.setHours(20, 0, 0, 0);
+  for (const rev of reviewsData) {
+    await prisma.review.create({ data: rev });
+  }
+  console.log(`✓ Seeded ${reviewsData.length} Verified Reviews linked 1:1 to Booking IDs`);
 
-  await prisma.matchPost.create({
+  // 7. Seed Active MatchPosts & Real Squad Rosters (JoinRequests)
+  console.log("⚡ Seeding active community matches with full squad rosters...");
+  const tonightMatchTime = new Date(now.getTime() + 6 * 3600000); // In 6 hours
+  tonightMatchTime.setMinutes(0, 0, 0);
+
+  const tomorrowMatchTime = new Date(now.getTime() + 30 * 3600000); // Tomorrow evening
+  tomorrowMatchTime.setMinutes(0, 0, 0);
+
+  const weekendMatchTime = new Date(now.getTime() + 54 * 3600000); // Weekend
+  weekendMatchTime.setMinutes(0, 0, 0);
+
+  // Match 1: Halishahar Arena (Chattogram)
+  const match1 = await prisma.matchPost.create({
     data: {
-      turfId: createdTurfs[2].id, // Chandgaon
+      turfId: createdTurfs[0].id,
       hostUserId: player.id,
-      title: "Need 1 Solid Goalkeeper for 7v7 Match Tonight!",
-      description: "We booked Chandgaon Turf for 8 PM - 9:30 PM tonight. Our regular GK got injured. Looking for a dependable shot-stopper. Friendly, competitive vibe!",
+      bookingId: bookingsToInsert[bookingsToInsert.length - 7].id, // Linked to Halishahar upcoming booking
+      title: "Need 1 Dependable Goalkeeper for 7v7 Match Tonight!",
+      description: "We booked Eco Sports Halishahar for tonight. Our regular GK got injured. Looking for a dependable shot-stopper. Friendly, competitive vibe!",
       sportFormat: "7v7",
-      matchTime: tonight,
-      area: "Chandgaon, Chattogram",
+      matchTime: tonightMatchTime,
+      area: "Halishahar, Chattogram",
       totalSpots: 14,
       openSpots: 1,
       costPerPlayer: 150,
@@ -768,42 +986,111 @@ async function main() {
     },
   });
 
-  await prisma.matchPost.create({
+  // Attach 12 squad members to Match 1 so 1 spot is truly open
+  for (let i = 0; i < 12; i++) {
+    await prisma.joinRequest.create({
+      data: {
+        matchPostId: match1.id,
+        userId: squadUsers[i].id,
+        preferredRole: squadUsers[i].email.includes("siam") ? "Goalkeeper" : (i % 2 === 0 ? "Striker" : "Defender"),
+        status: "ACCEPTED",
+      },
+    });
+  }
+
+  // Match 2: Chandgaon Futsal Zone (Chattogram)
+  const match2 = await prisma.matchPost.create({
     data: {
-      turfId: createdTurfs[0].id, // Halishahar
+      turfId: createdTurfs[2].id,
       hostUserId: adiba.id,
-      title: "Dominatrix FC vs Amateur Rival Challenge (7v7)",
-      description: "Looking for a rival amateur team to play an intense 90-minute friendly match. 50/50 turf cost split.",
-      sportFormat: "7v7",
-      matchTime: new Date(Date.now() + 86400000),
-      area: "Halishahar, Chattogram",
-      totalSpots: 14,
-      openSpots: 7,
+      bookingId: bookingsToInsert[bookingsToInsert.length - 4].id,
+      title: "Dominatrix FC vs Amateur Rival Challenge (6v6)",
+      description: "Fast-paced futsal session. Need 2 clinical midfielders or wingers to complete our starting rotation.",
+      sportFormat: "6v6",
+      matchTime: tomorrowMatchTime,
+      area: "Chandgaon, Chattogram",
+      totalSpots: 12,
+      openSpots: 2,
       costPerPlayer: 200,
+      requiredRole: "Midfielder",
+      status: "OPEN",
+    },
+  });
+
+  for (let i = 0; i < 9; i++) {
+    await prisma.joinRequest.create({
+      data: {
+        matchPostId: match2.id,
+        userId: squadUsers[i].id,
+        preferredRole: i % 2 === 0 ? "Midfielder" : "Defender",
+        status: "ACCEPTED",
+      },
+    });
+  }
+
+  // Match 3: Dhanmondi Champions Field (Dhaka)
+  const match3 = await prisma.matchPost.create({
+    data: {
+      turfId: createdTurfs[11].id,
+      hostUserId: tanvir.id,
+      bookingId: bookingsToInsert[bookingsToInsert.length - 2].id,
+      title: "Dhaka Corporate Friday Night Futsal (7v7)",
+      description: "Post-work Friday evening session on imported shock-absorption turf. Looking for 2 energetic players.",
+      sportFormat: "7v7",
+      matchTime: weekendMatchTime,
+      area: "Dhanmondi, Dhaka",
+      totalSpots: 14,
+      openSpots: 2,
+      costPerPlayer: 250,
       requiredRole: "Any",
       status: "OPEN",
     },
   });
 
-  await prisma.matchPost.create({
+  for (let i = 0; i < 11; i++) {
+    await prisma.joinRequest.create({
+      data: {
+        matchPostId: match3.id,
+        userId: squadUsers[i].id,
+        preferredRole: "Striker",
+        status: "ACCEPTED",
+      },
+    });
+  }
+
+  // Match 4: Shahjalal Upashahar Turf (Sylhet)
+  const match4 = await prisma.matchPost.create({
     data: {
-      turfId: createdTurfs[9].id, // Patenga
+      turfId: createdTurfs[17].id,
       hostUserId: player.id,
-      title: "Weekend Seaside Box Cricket Match (6v6)",
-      description: "Casual tape-ball cricket box match under evening floodlights by the sea. Looking for 3 enthusiastic batsmen/bowlers.",
-      sportFormat: "Cricket Box",
-      matchTime: new Date(Date.now() + 2 * 86400000),
-      area: "Patenga, Chattogram",
+      bookingId: bookingsToInsert[bookingsToInsert.length - 1].id,
+      title: "Sylhet Weekend Friendly Cup (6v6)",
+      description: "Casual weekend match under evening floodlights by the lake. Looking for 1 striker.",
+      sportFormat: "6v6",
+      matchTime: new Date(weekendMatchTime.getTime() + 86400000),
+      area: "Upashahar, Sylhet",
       totalSpots: 12,
-      openSpots: 3,
-      costPerPlayer: 100,
-      requiredRole: "All-rounder",
+      openSpots: 1,
+      costPerPlayer: 180,
+      requiredRole: "Striker",
       status: "OPEN",
     },
   });
 
-  console.log("✓ Seeded Open Matchmaking Posts & Reviews");
-  console.log("🎉 Database seeding completed successfully!");
+  for (let i = 0; i < 10; i++) {
+    await prisma.joinRequest.create({
+      data: {
+        matchPostId: match4.id,
+        userId: squadUsers[i].id,
+        preferredRole: "Midfielder",
+        status: "ACCEPTED",
+      },
+    });
+  }
+
+  console.log("✓ Seeded 4 Active MatchPosts across Chattogram, Dhaka, and Sylhet with authentic JoinRequest squads!");
+  console.log("🎉 Database seeding completed with 100% Relational Integrity!");
+
 }
 
 main()

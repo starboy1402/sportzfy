@@ -10,6 +10,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/matchmaking",
+        destination: "/matches",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

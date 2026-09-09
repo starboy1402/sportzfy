@@ -387,7 +387,7 @@ function SquadsShelf({ shelf }: { shelf: ShelvesApiResponse["squadsShelf"] }) {
 
         <div className="flex items-center gap-2">
           <Link
-            href="/matchmaking"
+            href="/matches"
             className="text-xs font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 mr-2"
           >
             <span>View All Matches</span>
@@ -477,7 +477,7 @@ function SquadsShelf({ shelf }: { shelf: ShelvesApiResponse["squadsShelf"] }) {
                 </div>
 
                 <Link
-                  href={`/matchmaking`}
+                  href={`/matches/${match.id}`}
                   className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-all shadow-xs flex items-center gap-1"
                 >
                   <span>Join Squad</span>

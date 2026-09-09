@@ -24,6 +24,7 @@ export default async function BookingsPage() {
       user: true,
     },
     orderBy: { createdAt: "desc" },
+    take: 50,
   });
 
   const formattedBookings: BookingWithDetails[] = await Promise.all(
