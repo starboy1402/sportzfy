@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Bebas_Neue, Barlow } from "next/font/google";
 import TopProgressBar from "@/components/TopProgressBar";
+import AiChatbot from "@/components/AiChatbot";
 import "./globals.css";
 
 const bebasNeue = Bebas_Neue({
@@ -36,13 +37,18 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${bebasNeue.variable} ${barlow.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans bg-[var(--color-paper)] text-[var(--color-ink)] selection:bg-[var(--color-field)] selection:text-white">
+      <body
+        suppressHydrationWarning
+        className="min-h-full flex flex-col font-sans bg-[var(--color-paper)] text-[var(--color-ink)] selection:bg-[var(--color-field)] selection:text-white"
+      >
         <Suspense fallback={null}>
           <TopProgressBar />
         </Suspense>
         {children}
+        <AiChatbot />
       </body>
     </html>
   );

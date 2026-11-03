@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { prisma } from "@/lib/db";
@@ -107,7 +108,18 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <TurfCatalog turfs={turfs} />
+        <Suspense
+          fallback={
+            <div className="py-16 flex flex-col items-center justify-center gap-3">
+              <div className="w-8 h-8 border-4 border-[var(--color-field)] border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-forest)]">
+                Loading Verified Venues...
+              </span>
+            </div>
+          }
+        >
+          <TurfCatalog turfs={turfs} />
+        </Suspense>
       </section>
 
       {/* 3. COMMUNITY SQUAD & GOALKEEPER RECRUITMENT TICKER */}

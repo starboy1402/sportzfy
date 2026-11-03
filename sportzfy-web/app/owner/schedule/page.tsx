@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
@@ -86,7 +86,7 @@ const HOUR_OPTIONS = [
   { value: 27, label: "3:00 AM (Next Day)" },
 ];
 
-export default function OwnerSchedulePage() {
+function OwnerScheduleContent() {
   const searchParams = useSearchParams();
   const initialTurfId = searchParams.get("turfId");
 
@@ -1031,5 +1031,19 @@ export default function OwnerSchedulePage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function OwnerSchedulePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[var(--color-paper)]">
+          <div className="w-8 h-8 border-4 border-[var(--color-field)] border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <OwnerScheduleContent />
+    </Suspense>
   );
 }

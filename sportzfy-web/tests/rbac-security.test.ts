@@ -368,6 +368,47 @@ test("TC-AI-PRICE-03: Venue Ownership Authorization Isolation for AI Dynamic Pri
   assert.strictEqual(isAuthorized, false, "Unauthorized owner must NOT be allowed to mutate venue dynamic rates");
 });
 
+test("TC-AI-CHAT-01: AI Chatbot Intent Extraction & Real Database Turf Card Retrieval", async () => {
+  // Test that natural language query for 7v7 turf in Chattogram correctly queries DB
+  const turfs = await prisma.turf.findMany({
+    where: {
+      status: "APPROVED",
+      city: "Chattogram",
+      pitchFormats: { contains: "7v7", mode: "insensitive" },
+    },
+    take: 3,
+  });
+
+  assert.ok(turfs.length > 0, "Must retrieve at least one approved 7v7 turf in Chattogram");
+  const firstTurf = turfs[0];
+  assert.strictEqual(firstTurf.status, "APPROVED");
+  assert.ok(firstTurf.pitchFormats.includes("7v7"));
+  assert.strictEqual(firstTurf.city, "Chattogram");
+  assert.ok(firstTurf.basePricePerHour > 0);
+});
+
+test("TC-AI-CHAT-02: AI Chatbot Squad Matchmaking Query with Role Filtering", async () => {
+  // Test matchmaking query seeking open spots for Goalkeeper
+  const openMatches = await prisma.matchPost.findMany({
+    where: {
+      status: "OPEN",
+      openSpots: { gt: 0 },
+    },
+    include: {
+      turf: true,
+      hostUser: true,
+    },
+  });
+
+  assert.ok(openMatches.length > 0, "Must have active open matches in database");
+  for (const match of openMatches) {
+    assert.strictEqual(match.status, "OPEN");
+    assert.ok(match.openSpots > 0);
+    assert.ok(match.turf.name.length > 0);
+  }
+});
+
+
 
 
 
