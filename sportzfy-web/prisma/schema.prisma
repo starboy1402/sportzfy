@@ -26,6 +26,7 @@ model User {
   reviews      Review[]
   matchPosts   MatchPost[]   @relation("HostMatches")
   joinRequests JoinRequest[]
+  payoutRequests PayoutRequest[] @relation("OwnerPayouts")
 }
 
 model Profile {
@@ -202,3 +203,19 @@ model JoinRequest {
 
   @@unique([matchPostId, userId])
 }
+
+model PayoutRequest {
+  id             String    @id @default(cuid())
+  ownerId        String
+  owner          User      @relation("OwnerPayouts", fields: [ownerId], references: [id])
+  amount         Float     // in BDT (৳)
+  method         String    // BKASH, NAGAD, BANK_TRANSFER
+  accountNumber  String
+  accountHolder  String?
+  status         String    @default("PENDING") // PENDING, APPROVED, DISBURSED, REJECTED
+  transactionRef String?
+  adminNotes     String?
+  createdAt      DateTime  @default(now())
+  processedAt    DateTime?
+}
+

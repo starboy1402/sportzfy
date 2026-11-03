@@ -17,6 +17,7 @@ import {
 
 import TurfCatalog from "@/components/TurfCatalog";
 import FoodpandaDiscoveryShelves from "@/components/FoodpandaDiscoveryShelves";
+import HeroGlobalSearch from "@/components/HeroGlobalSearch";
 
 export const revalidate = 60; // Instant cached load with 60s background revalidation (ISR)
 
@@ -47,7 +48,7 @@ export default async function HomePage() {
         <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-[var(--color-field)]/10 blur-3xl pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="max-w-3xl mx-auto text-center space-y-4 anim-rise">
+          <div className="max-w-3xl mx-auto text-center space-y-5 anim-rise">
             {/* Urgency / Course Badge */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--color-mint)] border border-[var(--color-card-border)] shadow-xs">
               <span className="flex h-2 w-2 rounded-full bg-[var(--color-field)] animate-ping" />
@@ -67,6 +68,11 @@ export default async function HomePage() {
             <p className="text-base sm:text-lg text-[var(--color-ink-muted)] max-w-xl mx-auto font-medium">
               Bangladesh&apos;s on-demand turf booking engine. Instant 5-minute slot lock, transparent hourly rates, and verified floodlit pitches.
             </p>
+
+            {/* INTERACTIVE MULTI-PARAM SEARCH BAR */}
+            <div className="pt-2 sm:pt-3">
+              <HeroGlobalSearch />
+            </div>
 
             {/* Featured Slot Alert Banner */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-[var(--color-card-border)] text-xs text-[var(--color-forest)] font-semibold shadow-xs">

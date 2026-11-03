@@ -69,6 +69,11 @@ export async function POST(request: NextRequest) {
 
     const slug = `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now().toString().slice(-4)}`;
 
+    const finalCover =
+      coverImage ||
+      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&auto=format&fit=crop&q=80";
+    const hourlyRate = Number(basePricePerHour);
+
     const newTurf = await prisma.turf.create({
       data: {
         ownerId: currentUser.id,
@@ -77,16 +82,39 @@ export async function POST(request: NextRequest) {
         city,
         area,
         address: address || `${area}, ${city}`,
-        description: description || "Modern artificial grass football and cricket pitch with floodlights.",
+        description:
+          description ||
+          "Modern artificial grass football and cricket pitch with floodlights.",
         pitchFormats: pitchFormats || "6v6, 7v7",
-        basePricePerHour: Number(basePricePerHour),
-        coverImage: coverImage || "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&auto=format&fit=crop&q=80",
+        basePricePerHour: hourlyRate,
+        coverImage: finalCover,
         hasFloodlights: Boolean(hasFloodlights),
         hasParking: Boolean(hasParking),
         hasWashroom: Boolean(hasWashroom),
         hasChangingRoom: Boolean(hasChangingRoom),
         hasWater: Boolean(hasWater),
         status: "APPROVED", // Approved for immediate demonstration
+        images: {
+          create: [
+            {
+              url: finalCover,
+              caption: "Main Pitch View",
+              order: 0,
+            },
+          ],
+        },
+        availabilityRules: {
+          create: [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
+            dayOfWeek,
+            openHour: 16, // 4:00 PM BST
+            closeHour: 25, // 1:00 AM BST
+            hourlyRate,
+          })),
+        },
+      },
+      include: {
+        images: true,
+        availabilityRules: true,
       },
     });
 

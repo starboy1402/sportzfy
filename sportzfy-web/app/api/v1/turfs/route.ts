@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
     const area = searchParams.get("area");
     const format = searchParams.get("format");
     const query = searchParams.get("q");
+    const maxPrice = searchParams.get("maxPrice");
 
     const where: Record<string, unknown> = {
       status: "APPROVED",
@@ -26,6 +27,10 @@ export async function GET(request: NextRequest) {
         contains: format,
         mode: "insensitive",
       };
+    }
+
+    if (maxPrice && !isNaN(Number(maxPrice))) {
+      where.basePricePerHour = { lte: Number(maxPrice) };
     }
 
     if (query) {

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   MapPin,
   Star,
@@ -36,9 +37,21 @@ export interface TurfItem {
 }
 
 export default function TurfCatalog({ turfs }: { turfs: TurfItem[] }) {
+  const searchParams = useSearchParams();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState("All");
   const [selectedFormat, setSelectedFormat] = useState("All");
+
+  useEffect(() => {
+    const qParam = searchParams.get("q");
+    const cityParam = searchParams.get("city");
+    const formatParam = searchParams.get("format");
+
+    if (qParam !== null) setSearchQuery(qParam);
+    if (cityParam !== null) setSelectedCity(cityParam);
+    if (formatParam !== null) setSelectedFormat(formatParam);
+  }, [searchParams]);
 
   const filteredTurfs = useMemo(() => {
     return turfs.filter((t) => {

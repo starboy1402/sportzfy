@@ -15,6 +15,9 @@ export async function GET(
       where: {
         OR: [{ id }, { slug: id }],
       },
+      include: {
+        availabilityRules: true,
+      },
     });
 
     if (!turf) {
@@ -29,6 +32,15 @@ export async function GET(
     const year = parseInt(yearStr, 10);
     const month = parseInt(monthStr, 10) - 1; // 0-indexed
     const day = parseInt(dayStr, 10);
+
+    // Day of week in BST
+    const targetDateObj = new Date(Date.UTC(year, month, day));
+    const dayOfWeek = targetDateObj.getUTCDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    const ruleForDay = turf.availabilityRules?.find((r) => r.dayOfWeek === dayOfWeek);
+
+    const baseHourlyRate = ruleForDay?.hourlyRate ?? turf.basePricePerHour;
+    const openHour = ruleForDay?.openHour ?? 16;
+    const closeHour = ruleForDay?.closeHour ?? 25;
 
     // Midnight 00:00 BST on target day is 18:00 UTC of previous day (h - 6)
     const dayStart = new Date(Date.UTC(year, month, day, 0 - 6, 0, 0));
@@ -78,10 +90,12 @@ export async function GET(
     // Venue capacity across 28 days (~9 evening slots/day = 252 total slots)
     const historicalDensity = Math.min(0.95, Math.max(0.15, Math.round((recentBookingsCount / 252) * 100) / 100));
 
-    // Build standard evening/night timetable: 4 PM (16:00) through 12 AM (24:00)
-    // 16:00, 17:00, 18:00, 19:00, 20:00, 21:00, 22:00, 23:00, 24:00 (00:00)
+    // Build schedule hours from day rule (defaults to 16:00 through 24:00)
     const slots = [];
-    const hours = [16, 17, 18, 19, 20, 21, 22, 23, 24];
+    const hours = [];
+    for (let hr = openHour; hr < closeHour; hr++) {
+      hours.push(hr);
+    }
 
     for (const h of hours) {
       // In BST (UTC+6), UTC hour = h - 6
@@ -113,7 +127,7 @@ export async function GET(
       }
 
       // Calculate dynamic price using native Random Forest in-process engine with live density
-      const dynamicQuote = calculateDynamicSlotPrice(turf.basePricePerHour, slotStart, {
+      const dynamicQuote = calculateDynamicSlotPrice(baseHourlyRate, slotStart, {
         venueRating: turf.rating || 4.7,
         historicalDensity,
       });
@@ -139,7 +153,7 @@ export async function GET(
         badgeText: dynamicQuote.badgeText,
         pricingExplanation: dynamicQuote.explanation,
         price: dynamicQuote.finalPrice,
-        basePrice: turf.basePricePerHour,
+        basePrice: baseHourlyRate,
         status, // "AVAILABLE" | "HELD" | "BOOKED" | "BLOCKED"
         holdExpiresAt: activeHold ? activeHold.expiresAt.toISOString() : null,
       });

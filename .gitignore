@@ -38,4 +38,11 @@ sportzfy-web/prisma/*.db-journal
 # IDE & Editor files
 .vscode/
 .idea/
+.claude/
+
+# Peer reference diagrams & external sample documents
+abrar_diagram/
+naveed/
+vanguard360_diagrams.pdf
+
 

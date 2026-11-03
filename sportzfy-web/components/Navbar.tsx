@@ -236,21 +236,27 @@ export default function Navbar() {
 
             {/* Auth Profile / Login Button */}
             {currentUser ? (
-              <div className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-[var(--color-mint)] border border-[var(--color-card-border)] shadow-xs">
-                <div className="w-7 h-7 rounded-full bg-[var(--color-forest)] flex items-center justify-center text-white font-bold text-xs">
-                  {currentUser.name.slice(0, 2).toUpperCase()}
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold text-[var(--color-forest)] leading-none">
-                    {currentUser.name.split(" ")[0]}
-                  </span>
-                  <span className="text-xs font-semibold text-[var(--color-field)] uppercase">
-                    {currentUser.role}
-                  </span>
-                </div>
+              <div className="flex items-center gap-1.5">
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-[var(--color-mint)] border border-[var(--color-card-border)] hover:border-[var(--color-field)] shadow-xs transition-all group"
+                  title="My Profile & Settings"
+                >
+                  <div className="w-7 h-7 rounded-full bg-[var(--color-forest)] flex items-center justify-center text-white font-bold text-xs group-hover:bg-[var(--color-field)] transition-colors">
+                    {currentUser.name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <span className="text-xs font-bold text-[var(--color-forest)] leading-none group-hover:text-[var(--color-field)] transition-colors">
+                      {currentUser.name.split(" ")[0]}
+                    </span>
+                    <span className="text-[10px] font-semibold text-[var(--color-field)] uppercase">
+                      {currentUser.role}
+                    </span>
+                  </div>
+                </Link>
                 <button
                   onClick={handleLogout}
-                  className="p-1 rounded-lg text-[var(--color-ink-muted)] hover:text-red-600 hover:bg-white transition-colors ml-1 cursor-pointer"
+                  className="p-1.5 rounded-lg text-[var(--color-ink-muted)] hover:text-red-600 hover:bg-white transition-colors cursor-pointer"
                   title="Sign Out"
                 >
                   <LogOut className="w-3.5 h-3.5" />
@@ -307,10 +313,17 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden bg-[var(--color-paper)] border-b border-[var(--color-card-border)] px-4 pt-2 pb-6 space-y-3">
           {currentUser && (
-            <div className="p-3 rounded-xl bg-[var(--color-mint)] border border-[var(--color-card-border)] mb-2">
-              <span className="text-xs font-bold text-[var(--color-forest)] block">{currentUser.name}</span>
-              <span className="text-xs font-semibold text-[var(--color-field)] uppercase">{currentUser.role} ({currentUser.email})</span>
-            </div>
+            <Link
+              href="/profile"
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-3 rounded-xl bg-[var(--color-mint)] border border-[var(--color-card-border)] hover:border-[var(--color-field)] mb-2 flex items-center justify-between transition-colors block"
+            >
+              <div>
+                <span className="text-xs font-bold text-[var(--color-forest)] block">{currentUser.name}</span>
+                <span className="text-xs font-semibold text-[var(--color-field)] uppercase">{currentUser.role} ({currentUser.email})</span>
+              </div>
+              <span className="text-[11px] font-bold text-[var(--color-field)]">Edit Profile →</span>
+            </Link>
           )}
 
           <Link
