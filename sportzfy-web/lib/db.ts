@@ -11,9 +11,10 @@ function makePrismaClient() {
       async $allOperations({ operation, model, args, query }) {
         try {
           return await query(args);
-        } catch (error: any) {
-          const errorMessage = String(error?.message || "");
-          const errorCode = String(error?.code || "");
+        } catch (error: unknown) {
+          const err = error as Record<string, unknown> | undefined;
+          const errorMessage = String(err?.message || "");
+          const errorCode = String(err?.code || "");
 
           const isTransientConnectionError =
             errorMessage.includes("Closed") ||

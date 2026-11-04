@@ -17,7 +17,7 @@ export interface ChatActionCard {
   actionUrl: string;
 }
 
-interface GeminiAnalysis {
+interface AiAnalysis {
   reply: string;
   intent: "TURF_SEARCH" | "MATCH_SEARCH" | "PRICING" | "FAQ" | "GREETING";
   filters?: {
@@ -30,17 +30,7 @@ interface GeminiAnalysis {
   suggestedPrompts?: string[];
 }
 
-/**
- * Invokes Google Gemini Flash with strict structured JSON output and a 6-second timeout.
- * Returns null on any network failure, timeout, or invalid key to ensure 100% resilient fallback.
- */
-async function analyzeWithGemini(
-  userQuery: string,
-  history: Array<{ role: string; content: string }>,
-  apiKey: string
-): Promise<GeminiAnalysis | null> {
-  try {
-    const systemInstruction = `You are the AI Concierge for Sportzfy, Bangladesh's Premier Sports Turf & Community Marketplace.
+const SYSTEM_INSTRUCTION = `You are the AI Concierge for Sportzfy, Bangladesh's Premier Sports Turf & Community Marketplace.
 Your job is to assist players and turf owners with friendliness, expertise, and precision. You understand English and Bangla/Banglish fluently.
 
 Platform Knowledge:
@@ -50,7 +40,7 @@ Platform Knowledge:
 - Verified Turf Locations: Venues across Chattogram (Halishahar, Khulshi, Panchlaish, Agrabad, Patenga, Nasirabad, Raozan), Dhaka (Dhanmondi, Banani, Mirpur, Gulshan, Uttara), and Sylhet (Upashahar).
 - Instant Checkout: bKash, Nagad, and local cards with digital QR pass generation.
 
-Output Schema (MUST be valid JSON):
+Output MUST strictly be valid JSON matching this schema:
 {
   "reply": "Warm, markdown-formatted conversational answer. If the user spoke in Banglish, reply warmly in friendly Banglish or English.",
   "intent": "TURF_SEARCH" | "MATCH_SEARCH" | "PRICING" | "FAQ" | "GREETING",
@@ -64,6 +54,69 @@ Output Schema (MUST be valid JSON):
   "suggestedPrompts": ["Short suggested follow-up 1", "Short suggested follow-up 2", "Short suggested follow-up 3"]
 }`;
 
+/**
+ * ⚡ Groq LPU Engine (~500ms ultra-low latency)
+ */
+async function analyzeWithGroq(
+  userQuery: string,
+  history: Array<{ role: string; content: string }>,
+  apiKey: string,
+): Promise<AiAnalysis | null> {
+  try {
+    const messages = [
+      { role: "system", content: SYSTEM_INSTRUCTION },
+      ...history.slice(-3).map((m) => ({
+        role: m.role === "assistant" ? "assistant" : "user",
+        content: m.content,
+      })),
+      { role: "user", content: userQuery },
+    ];
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey} `,
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: "qwen/qwen3.8-27b",
+        messages,
+        response_format: { type: "json_object" },
+        temperature: 0.2,
+        max_tokens: 600,
+      }),
+    });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      console.warn("Groq API returned non-200 status:", res.status);
+      return null;
+    }
+
+    const data = await res.json();
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) return null;
+
+    return JSON.parse(content) as AiAnalysis;
+  } catch (err) {
+    console.warn("Groq call bypassed, falling back to secondary:", err);
+    return null;
+  }
+}
+
+/**
+ * 🧠 Google Gemini Engine (~1.5s fallback)
+ */
+async function analyzeWithGemini(
+  userQuery: string,
+  history: Array<{ role: string; content: string }>,
+  apiKey: string,
+): Promise<AiAnalysis | null> {
+  try {
     const contents = [
       ...history.slice(-3).map((m) => ({
         role: m.role === "assistant" ? "model" : "user",
@@ -86,13 +139,13 @@ Output Schema (MUST be valid JSON):
         signal: controller.signal,
         body: JSON.stringify({
           contents,
-          systemInstruction: { parts: [{ text: systemInstruction }] },
+          systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
           generationConfig: {
             responseMimeType: "application/json",
             thinkingConfig: { thinkingBudget: 0 },
           },
         }),
-      }
+      },
     );
     clearTimeout(timeoutId);
 
@@ -105,20 +158,28 @@ Output Schema (MUST be valid JSON):
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) return null;
 
-    return JSON.parse(text) as GeminiAnalysis;
+    return JSON.parse(text) as AiAnalysis;
   } catch (err) {
-    console.warn("Gemini API call bypassed, falling back to local NLU engine:", err);
+    console.warn(
+      "Gemini API call bypassed, falling back to local NLU engine:",
+      err,
+    );
     return null;
   }
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  let activeProvider: "GROQ_LPU" | "GEMINI_FLASH" | "LOCAL_FALLBACK" =
+    "LOCAL_FALLBACK";
+
   try {
     const currentUser = await getCurrentUser();
     const body = await request.json();
     const messages = body.messages || [];
     const lastUserMessage =
-      messages.filter((m: { role: string }) => m.role === "user").pop()?.content || "";
+      messages.filter((m: { role: string }) => m.role === "user").pop()
+        ?.content || "";
 
     const queryLower = lastUserMessage.toLowerCase().trim();
 
@@ -133,159 +194,215 @@ export async function POST(request: NextRequest) {
       if (profile?.favoritePosition) userRole = profile.favoritePosition;
     }
 
-    // Try Gemini Engine if key is configured
-    const geminiKey = process.env.GEMINI_API_KEY?.trim();
-    if (geminiKey) {
-      const geminiAnalysis = await analyzeWithGemini(lastUserMessage, messages.slice(0, -1), geminiKey);
+    // 1. Try Groq LPU Engine (Primary Ultra-Fast ~500ms)
+    let aiAnalysis: AiAnalysis | null = null;
+    const groqKey = process.env.GROQ_API_KEY?.trim();
+    if (groqKey) {
+      aiAnalysis = await analyzeWithGroq(
+        lastUserMessage,
+        messages.slice(0, -1),
+        groqKey,
+      );
+      if (aiAnalysis) activeProvider = "GROQ_LPU";
+    }
 
-      if (geminiAnalysis) {
-        const actionCards: ChatActionCard[] = [];
+    // 2. Try Gemini Engine (Secondary Fallback ~1.5s)
+    if (!aiAnalysis) {
+      const geminiKey = process.env.GEMINI_API_KEY?.trim();
+      if (geminiKey) {
+        aiAnalysis = await analyzeWithGemini(
+          lastUserMessage,
+          messages.slice(0, -1),
+          geminiKey,
+        );
+        if (aiAnalysis) activeProvider = "GEMINI_FLASH";
+      }
+    }
 
-        // Normalize city
-        let targetCity: string | undefined = geminiAnalysis.filters?.city;
-        if (targetCity) {
-          const lower = targetCity.toLowerCase();
-          if (lower.includes("dhaka")) targetCity = "Dhaka";
-          else if (lower.includes("sylhet")) targetCity = "Sylhet";
-          else if (lower.includes("chattogram") || lower.includes("chittagong")) targetCity = "Chattogram";
-        }
+    const durationMs = Date.now() - startTime;
+    console.log(
+      `[AI Concierge] Provider: ${activeProvider} | Latency: ${durationMs}ms | Query: "${lastUserMessage.slice(0, 45)}"`,
+    );
 
-        // Normalize format
-        let targetFormat: string | undefined = geminiAnalysis.filters?.format;
-        if (targetFormat) {
-          if (targetFormat.includes("5")) targetFormat = "5v5";
-          else if (targetFormat.includes("6")) targetFormat = "6v6";
-          else if (targetFormat.includes("7")) targetFormat = "7v7";
-        }
+    // If an AI engine (Groq or Gemini) successfully analyzed the request:
+    if (aiAnalysis) {
+      const actionCards: ChatActionCard[] = [];
 
-        // Normalize role
-        let targetRole: string | undefined = geminiAnalysis.filters?.role;
-        if (targetRole) {
-          const lower = targetRole.toLowerCase();
-          if (lower.includes("keep") || lower.includes("gk") || lower.includes("goal")) targetRole = "Goalkeeper";
-          else if (lower.includes("strik") || lower.includes("attack") || lower.includes("forward")) targetRole = "Striker";
-          else if (lower.includes("mid")) targetRole = "Midfielder";
-          else if (lower.includes("def")) targetRole = "Defender";
-        }
+      // Normalize city
+      let targetCity: string | undefined = aiAnalysis.filters?.city;
+      if (targetCity) {
+        const lower = targetCity.toLowerCase();
+        if (lower.includes("dhaka")) targetCity = "Dhaka";
+        else if (lower.includes("sylhet")) targetCity = "Sylhet";
+        else if (lower.includes("chattogram") || lower.includes("chittagong"))
+          targetCity = "Chattogram";
+      }
 
-        if (geminiAnalysis.intent === "TURF_SEARCH") {
-          const where: Record<string, unknown> = { status: "APPROVED" };
-          if (targetCity) where.city = targetCity;
-          else where.city = userCity;
+      // Normalize format
+      let targetFormat: string | undefined = aiAnalysis.filters?.format;
+      if (targetFormat) {
+        if (targetFormat.includes("5")) targetFormat = "5v5";
+        else if (targetFormat.includes("6")) targetFormat = "6v6";
+        else if (targetFormat.includes("7")) targetFormat = "7v7";
+      }
 
-          if (geminiAnalysis.filters?.area) {
-            where.area = { contains: geminiAnalysis.filters.area, mode: "insensitive" };
-          }
-          if (targetFormat) {
-            where.pitchFormats = { contains: targetFormat, mode: "insensitive" };
-          }
-          if (geminiAnalysis.filters?.maxPrice) {
-            where.basePricePerHour = { lte: geminiAnalysis.filters.maxPrice };
-          }
+      // Normalize role
+      let targetRole: string | undefined = aiAnalysis.filters?.role;
+      if (targetRole) {
+        const lower = targetRole.toLowerCase();
+        if (
+          lower.includes("keep") ||
+          lower.includes("gk") ||
+          lower.includes("goal")
+        )
+          targetRole = "Goalkeeper";
+        else if (
+          lower.includes("strik") ||
+          lower.includes("attack") ||
+          lower.includes("forward")
+        )
+          targetRole = "Striker";
+        else if (lower.includes("mid")) targetRole = "Midfielder";
+        else if (lower.includes("def")) targetRole = "Defender";
+      }
 
-          const turfs = await prisma.turf.findMany({
-            where,
-            take: 3,
-            orderBy: { rating: "desc" },
-          });
+      if (aiAnalysis.intent === "TURF_SEARCH") {
+        const where: Record<string, unknown> = { status: "APPROVED" };
+        if (targetCity) where.city = targetCity;
+        else where.city = userCity;
 
-          for (const t of turfs) {
-            actionCards.push({
-              type: "TURF",
-              id: t.id,
-              title: t.name,
-              subtitle: `${t.pitchFormats} • ★ ${t.rating}`,
-              area: t.area,
-              city: t.city,
-              badge: `${t.pitchFormats.split(",")[0].trim()} Floodlit`,
-              price: t.basePricePerHour,
-              coverImage: t.coverImage,
-              actionUrl: `/turfs/${t.id}`,
-            });
-          }
-
-          return NextResponse.json({
-            data: {
-              reply: geminiAnalysis.reply,
-              actionCards,
-              suggestedPrompts: geminiAnalysis.suggestedPrompts || [
-                "⚽ Show available 5v5 slots",
-                "💰 When are the cheapest rates?",
-                "🧤 Find open squad matches",
-              ],
-            },
-          });
-        }
-
-        if (geminiAnalysis.intent === "MATCH_SEARCH") {
-          const where: Record<string, unknown> = {
-            status: "OPEN",
-            openSpots: { gt: 0 },
+        if (aiAnalysis.filters?.area) {
+          where.area = {
+            contains: aiAnalysis.filters.area,
+            mode: "insensitive",
           };
-          if (targetRole) where.requiredRole = { in: [targetRole, "Any"] };
-          if (targetFormat) where.sportFormat = targetFormat;
-          if (geminiAnalysis.filters?.area) {
-            where.area = { contains: geminiAnalysis.filters.area, mode: "insensitive" };
-          }
+        }
+        if (targetFormat) {
+          where.pitchFormats = { contains: targetFormat, mode: "insensitive" };
+        }
+        if (aiAnalysis.filters?.maxPrice) {
+          where.basePricePerHour = { lte: aiAnalysis.filters.maxPrice };
+        }
 
-          const matches = await prisma.matchPost.findMany({
-            where,
-            take: 3,
-            include: {
-              turf: { select: { name: true, area: true, city: true, coverImage: true } },
-              hostUser: { select: { name: true, phone: true } },
-            },
-            orderBy: { matchTime: "asc" },
-          });
+        const turfs = await prisma.turf.findMany({
+          where,
+          take: 3,
+          orderBy: { rating: "desc" },
+        });
 
-          for (const m of matches) {
-            actionCards.push({
-              type: "MATCH",
-              id: m.id,
-              title: m.title,
-              subtitle: `Host: ${m.hostUser.name} • ${m.turf.name}`,
-              area: m.area,
-              city: m.turf.city,
-              badge: `${m.openSpots} spots left • Role: ${m.requiredRole}`,
-              price: m.costPerPlayer,
-              matchTime: new Date(m.matchTime).toLocaleDateString("en-US", {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-              }),
-              coverImage: m.turf.coverImage,
-              actionUrl: `/matches`,
-            });
-          }
-
-          return NextResponse.json({
-            data: {
-              reply: geminiAnalysis.reply,
-              actionCards,
-              suggestedPrompts: geminiAnalysis.suggestedPrompts || [
-                "⚽ Show all turfs",
-                "🧤 Squads looking for a Goalkeeper",
-                "💰 How does payment splitting work?",
-              ],
-            },
+        for (const t of turfs) {
+          actionCards.push({
+            type: "TURF",
+            id: t.id,
+            title: t.name,
+            subtitle: `${t.pitchFormats} • ★ ${t.rating}`,
+            area: t.area,
+            city: t.city,
+            badge: `${t.pitchFormats.split(",")[0].trim()} Floodlit`,
+            price: t.basePricePerHour,
+            coverImage: t.coverImage,
+            actionUrl: `/turfs/${t.id}`,
           });
         }
 
-        // For FAQ, PRICING, or GREETING
         return NextResponse.json({
           data: {
-            reply: geminiAnalysis.reply,
-            actionCards: [],
-            suggestedPrompts: geminiAnalysis.suggestedPrompts || [
-              "⚽ Search available turfs",
+            reply: aiAnalysis.reply,
+            actionCards,
+            suggestedPrompts: aiAnalysis.suggestedPrompts || [
+              "⚽ Show available 5v5 slots",
+              "💰 When are the cheapest rates?",
               "🧤 Find open squad matches",
-              "⏱️ How does the 5-min Hold work?",
             ],
+            telemetry: {
+              provider: activeProvider,
+              latencyMs: Date.now() - startTime,
+            },
           },
         });
       }
+
+      if (aiAnalysis.intent === "MATCH_SEARCH") {
+        const where: Record<string, unknown> = {
+          status: "OPEN",
+          openSpots: { gt: 0 },
+        };
+        if (targetRole) where.requiredRole = { in: [targetRole, "Any"] };
+        if (targetFormat) where.sportFormat = targetFormat;
+        if (aiAnalysis.filters?.area) {
+          where.area = {
+            contains: aiAnalysis.filters.area,
+            mode: "insensitive",
+          };
+        }
+
+        const matches = await prisma.matchPost.findMany({
+          where,
+          take: 3,
+          include: {
+            turf: {
+              select: { name: true, area: true, city: true, coverImage: true },
+            },
+            hostUser: { select: { name: true, phone: true } },
+          },
+          orderBy: { matchTime: "asc" },
+        });
+
+        for (const m of matches) {
+          actionCards.push({
+            type: "MATCH",
+            id: m.id,
+            title: m.title,
+            subtitle: `Host: ${m.hostUser.name} • ${m.turf.name}`,
+            area: m.area,
+            city: m.turf.city,
+            badge: `${m.openSpots} spots left • Role: ${m.requiredRole}`,
+            price: m.costPerPlayer,
+            matchTime: new Date(m.matchTime).toLocaleDateString("en-US", {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+            }),
+            coverImage: m.turf.coverImage,
+            actionUrl: `/matches`,
+          });
+        }
+
+        return NextResponse.json({
+          data: {
+            reply: aiAnalysis.reply,
+            actionCards,
+            suggestedPrompts: aiAnalysis.suggestedPrompts || [
+              "⚽ Show all turfs",
+              "🧤 Squads looking for a Goalkeeper",
+              "💰 How does payment splitting work?",
+            ],
+            telemetry: {
+              provider: activeProvider,
+              latencyMs: Date.now() - startTime,
+            },
+          },
+        });
+      }
+
+      // For FAQ, PRICING, or GREETING
+      return NextResponse.json({
+        data: {
+          reply: aiAnalysis.reply,
+          actionCards: [],
+          suggestedPrompts: aiAnalysis.suggestedPrompts || [
+            "⚽ Search available turfs",
+            "🧤 Find open squad matches",
+            "⏱️ How does the 5-min Hold work?",
+          ],
+          telemetry: {
+            provider: activeProvider,
+            latencyMs: Date.now() - startTime,
+          },
+        },
+      });
     }
 
     // ==========================================
@@ -295,7 +412,10 @@ export async function POST(request: NextRequest) {
     // 1. Entity Extraction
     let detectedCity: string | undefined;
     if (queryLower.includes("dhaka")) detectedCity = "Dhaka";
-    else if (queryLower.includes("chattogram") || queryLower.includes("chittagong"))
+    else if (
+      queryLower.includes("chattogram") ||
+      queryLower.includes("chittagong")
+    )
       detectedCity = "Chattogram";
     else if (queryLower.includes("sylhet")) detectedCity = "Sylhet";
 
@@ -320,7 +440,11 @@ export async function POST(request: NextRequest) {
     const detectedArea = areas.find((a) => queryLower.includes(a));
 
     let detectedFormat: string | undefined;
-    if (queryLower.includes("5v5") || queryLower.includes("5-a-side") || queryLower.includes("5 a side"))
+    if (
+      queryLower.includes("5v5") ||
+      queryLower.includes("5-a-side") ||
+      queryLower.includes("5 a side")
+    )
       detectedFormat = "5v5";
     else if (queryLower.includes("6v6") || queryLower.includes("6-a-side"))
       detectedFormat = "6v6";
@@ -328,9 +452,11 @@ export async function POST(request: NextRequest) {
       detectedFormat = "7v7";
 
     const priceMatch = queryLower.match(
-      /(?:under|below|less than|max|budget|within|upto|up to)\s*(?:৳|bdt)?\s*(\d{3,4})/i
+      /(?:under|below|less than|max|budget|within|upto|up to)\s*(?:৳|bdt)?\s*(\d{3,4})/i,
     );
-    const detectedMaxPrice = priceMatch ? parseInt(priceMatch[1], 10) : undefined;
+    const detectedMaxPrice = priceMatch
+      ? parseInt(priceMatch[1], 10)
+      : undefined;
 
     let detectedRole: string | undefined;
     if (
@@ -346,15 +472,19 @@ export async function POST(request: NextRequest) {
       queryLower.includes("attacker")
     )
       detectedRole = "Striker";
-    else if (queryLower.includes("midfielder") || queryLower.includes("midfield"))
+    else if (
+      queryLower.includes("midfielder") ||
+      queryLower.includes("midfield")
+    )
       detectedRole = "Midfielder";
     else if (queryLower.includes("defender") || queryLower.includes("defense"))
       detectedRole = "Defender";
 
     // 2. Intent Classification
     const isGreeting =
-      /^(hi|hello|hey|assalamu alaikum|salam|hola|good morning|good evening)/i.test(queryLower) &&
-      queryLower.split(" ").length <= 4;
+      /^(hi|hello|hey|assalamu alaikum|salam|hola|good morning|good evening)/i.test(
+        queryLower,
+      ) && queryLower.split(" ").length <= 4;
 
     const isMatchIntent =
       queryLower.includes("match") ||
@@ -363,7 +493,9 @@ export async function POST(request: NextRequest) {
       queryLower.includes("roster") ||
       queryLower.includes("player") ||
       queryLower.includes("join") ||
-      (detectedRole !== undefined && !queryLower.includes("turf") && !queryLower.includes("book"));
+      (detectedRole !== undefined &&
+        !queryLower.includes("turf") &&
+        !queryLower.includes("book"));
 
     const isPricingIntent =
       (queryLower.includes("rate") ||
@@ -411,13 +543,16 @@ export async function POST(request: NextRequest) {
 
       if (detectedRole) where.requiredRole = { in: [detectedRole, "Any"] };
       if (detectedFormat) where.sportFormat = detectedFormat;
-      if (detectedArea) where.area = { contains: detectedArea, mode: "insensitive" };
+      if (detectedArea)
+        where.area = { contains: detectedArea, mode: "insensitive" };
 
       const matches = await prisma.matchPost.findMany({
         where,
         take: 3,
         include: {
-          turf: { select: { name: true, area: true, city: true, coverImage: true } },
+          turf: {
+            select: { name: true, area: true, city: true, coverImage: true },
+          },
           hostUser: { select: { name: true, phone: true } },
         },
         orderBy: { matchTime: "asc" },
@@ -490,11 +625,18 @@ export async function POST(request: NextRequest) {
       const where: Record<string, unknown> = { status: "APPROVED" };
 
       if (detectedCity) where.city = detectedCity;
-      if (detectedArea) where.area = { contains: detectedArea, mode: "insensitive" };
-      if (detectedFormat) where.pitchFormats = { contains: detectedFormat, mode: "insensitive" };
+      if (detectedArea)
+        where.area = { contains: detectedArea, mode: "insensitive" };
+      if (detectedFormat)
+        where.pitchFormats = { contains: detectedFormat, mode: "insensitive" };
       if (detectedMaxPrice) where.basePricePerHour = { lte: detectedMaxPrice };
 
-      if (!detectedCity && !detectedArea && !detectedFormat && !detectedMaxPrice) {
+      if (
+        !detectedCity &&
+        !detectedArea &&
+        !detectedFormat &&
+        !detectedMaxPrice
+      ) {
         where.city = userCity;
       }
 
@@ -507,12 +649,16 @@ export async function POST(request: NextRequest) {
       if (turfs.length > 0) {
         const filtersSummary: string[] = [];
         if (detectedFormat) filtersSummary.push(`format **${detectedFormat}**`);
-        if (detectedArea) filtersSummary.push(`in **${detectedArea.toUpperCase()}**`);
+        if (detectedArea)
+          filtersSummary.push(`in **${detectedArea.toUpperCase()}**`);
         if (detectedCity) filtersSummary.push(`in **${detectedCity}**`);
-        if (detectedMaxPrice) filtersSummary.push(`under **৳${detectedMaxPrice}**`);
+        if (detectedMaxPrice)
+          filtersSummary.push(`under **৳${detectedMaxPrice}**`);
 
         replyText = `Found **${turfs.length} verified venue${turfs.length > 1 ? "s" : ""}**${
-          filtersSummary.length > 0 ? " matching " + filtersSummary.join(", ") : ` in **${userCity}**`
+          filtersSummary.length > 0
+            ? " matching " + filtersSummary.join(", ")
+            : ` in **${userCity}**`
         }! Click any venue card below to inspect timetable and hold a slot:`;
 
         for (const t of turfs) {
@@ -550,6 +696,10 @@ export async function POST(request: NextRequest) {
         reply: replyText,
         actionCards,
         suggestedPrompts,
+        telemetry: {
+          provider: activeProvider,
+          latencyMs: Date.now() - startTime,
+        },
       },
     });
   } catch (error) {
@@ -561,7 +711,7 @@ export async function POST(request: NextRequest) {
           message: "Failed to process chat message.",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

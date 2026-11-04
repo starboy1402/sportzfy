@@ -51,6 +51,7 @@ export default function TurfCatalog({ turfs }: { turfs: TurfItem[] }) {
     if (qParam !== null) setSearchQuery(qParam);
     if (cityParam !== null) setSelectedCity(cityParam);
     if (formatParam !== null) setSelectedFormat(formatParam);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
   }, [searchParams]);
 
   const filteredTurfs = useMemo(() => {

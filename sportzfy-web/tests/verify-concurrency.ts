@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * TC-HOLD-01: Automated Concurrency Collision Prevention Test
  * 
