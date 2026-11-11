@@ -1,0 +1,31 @@
+<svg width="1600" height="620" viewBox="0 0 1600 620" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1600" y2="620" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#073B2B"/>
+      <stop offset="0.58" stop-color="#0B5A40"/>
+      <stop offset="1" stop-color="#11B981"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="1030" y1="80" x2="1500" y2="550" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D9F99D" stop-opacity="0.86"/>
+      <stop offset="1" stop-color="#D9F99D" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="pitch" width="92" height="92" patternUnits="userSpaceOnUse">
+      <path d="M92 0H0V92" stroke="#D9F99D" stroke-opacity="0.12" stroke-width="2"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="620" rx="28" fill="url(#background)"/>
+  <rect x="850" y="-100" width="850" height="850" rx="425" fill="url(#glow)"/>
+  <rect x="850" y="0" width="750" height="620" fill="url(#pitch)"/>
+  <path d="M1050 0V620M1235 0V620M1420 0V620" stroke="#D9F99D" stroke-opacity="0.16" stroke-width="3"/>
+  <path d="M850 205H1600M850 415H1600" stroke="#D9F99D" stroke-opacity="0.16" stroke-width="3"/>
+  <circle cx="1235" cy="310" r="115" stroke="#D9F99D" stroke-opacity="0.34" stroke-width="4"/>
+  <circle cx="1235" cy="310" r="8" fill="#D9F99D"/>
+  <path d="M1035 155H1130C1172 155 1206 189 1206 231V389C1206 431 1172 465 1130 465H1035" stroke="#D9F99D" stroke-opacity="0.34" stroke-width="4"/>
+  <path d="M1435 155H1340C1298 155 1264 189 1264 231V389C1264 431 1298 465 1340 465H1435" stroke="#D9F99D" stroke-opacity="0.34" stroke-width="4"/>
+  <text x="112" y="154" fill="#D9F99D" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" letter-spacing="5">SPORTS TURF MARKETPLACE</text>
+  <text x="108" y="272" fill="white" font-family="Arial, Helvetica, sans-serif" font-size="86" font-weight="800" letter-spacing="-3">PLAY WHERE</text>
+  <text x="108" y="365" fill="#D9F99D" font-family="Arial, Helvetica, sans-serif" font-size="86" font-weight="800" letter-spacing="-3">THE GRASS IS LOUD.</text>
+  <text x="112" y="432" fill="#D8F3E8" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="400">Discover. Lock. Book. Build your squad.</text>
+  <rect x="112" y="482" width="202" height="52" rx="26" fill="#D9F99D"/>
+  <text x="145" y="517" fill="#073B2B" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="800">SPORTZFY ↗</text>
+</svg>
