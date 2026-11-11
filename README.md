@@ -57,6 +57,27 @@ flowchart LR
 3. Manage the schedule, walk-ins, maintenance blocks, and availability.
 4. Review bookings and use the owner dashboard to monitor the venue.
 
+### Interface preview
+
+The following captures show the current app interface and the main entry points for players:
+
+<table>
+  <tr>
+    <td width="50%"><img src="./docs/assets/sportzfy-login.png" alt="Sportzfy sign-in screen" /></td>
+    <td width="50%"><img src="./docs/assets/sportzfy-register.png" alt="Sportzfy registration screen" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Player, owner, and admin sign-in</sub></td>
+    <td align="center"><sub>Create a player or owner profile</sub></td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="./docs/assets/sportzfy-ai-concierge.png" alt="Sportzfy AI Concierge open on the sign-in screen" /></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><sub>Sportzfy AI Concierge for guided discovery and support</sub></td>
+  </tr>
+</table>
+
 ## Highlights
 
 | For players | For venue owners | Platform |
