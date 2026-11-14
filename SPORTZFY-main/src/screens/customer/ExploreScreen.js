@@ -1,12 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
-// ScrollView used below for the results list.
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -15,19 +15,17 @@ import SearchBar from '../../components/SearchBar';
 import TurfCard from '../../components/TurfCard';
 import FilterModal from '../../components/FilterModal';
 
-import {
-  TURFS,
-  getAllLocations,
-  getAllSports,
-  PRICE_RANGE,
-} from '../../data/mockData';
+import { TURFS, PRICE_RANGE } from '../../data/mockData';
 import { useBooking } from '../../context/BookingContext';
+import { useAiChat } from '../../context/AiChatContext';
+import { api, formatTurfForMobile } from '../../services/api';
 import {
   COLORS,
   SPACING,
   RADIUS,
   FONT_SIZE,
   FONT_WEIGHT,
+  SHADOWS,
 } from '../../constants/theme';
 
 const DEFAULT_FILTERS = {
@@ -40,60 +38,94 @@ const DEFAULT_FILTERS = {
   availability: 'Any',
 };
 
+const CATEGORIES = [
+  { id: 'all', label: 'All Arenas' },
+  { id: 'football', label: '⚽ Football' },
+  { id: 'cricket', label: '🏏 Cricket' },
+  { id: 'badminton', label: '🏸 Badminton' },
+  { id: 'padel', label: '🎾 Padel' },
+];
+
 export default function ExploreScreen({ navigation }) {
   const { userLocation } = useBooking();
+  const { openAi } = useAiChat();
 
-  // Search query
+  const [turfList, setTurfList] = useState(TURFS);
+  const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState('');
-
-  // Filters (applied). The draft copy lives inside FilterModal.
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
-
-  // Modal visibility
   const [showFilters, setShowFilters] = useState(false);
+  const [quickSport, setQuickSport] = useState('all');
 
-  // Helper: parse a rating threshold like "4.0+" into a number (4.0).
+  useEffect(() => {
+    async function fetchLiveTurfs() {
+      setLoading(true);
+      try {
+        const live = await api.getTurfs();
+        if (live && live.length > 0) {
+          setTurfList(live.map(formatTurfForMobile));
+        }
+      } catch (e) {
+        console.warn('Using fallback turfs in Explore:', e.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchLiveTurfs();
+  }, []);
+
   function parseRating(value) {
     if (!value || value === 'Any') return 0;
     return parseFloat(value) || 0;
   }
 
-  // Filtering logic — runs whenever query or filters change.
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     const minRating = parseRating(filters.minRating);
 
-    return TURFS.filter((t) => {
-      // Search match: name OR location
-      if (q && !t.name.toLowerCase().includes(q) && !t.location.toLowerCase().includes(q)) {
+    return turfList.filter((t) => {
+      // Quick sport pill
+      if (quickSport !== 'all') {
+        const sportMatch =
+          (t.sport || '').toLowerCase().includes(quickSport.toLowerCase()) ||
+          (t.pitchFormats || '').toLowerCase().includes(quickSport.toLowerCase());
+        if (!sportMatch) return false;
+      }
+
+      // Query filter
+      if (
+        q &&
+        !t.name.toLowerCase().includes(q) &&
+        !(t.location || '').toLowerCase().includes(q) &&
+        !(t.area || '').toLowerCase().includes(q)
+      ) {
         return false;
       }
-      // Location
-      if (filters.location !== 'All' && t.location !== filters.location) {
+
+      // Modal filters
+      if (
+        filters.location !== 'All' &&
+        !(t.location || '').toLowerCase().includes(filters.location.toLowerCase()) &&
+        !(t.area || '').toLowerCase().includes(filters.location.toLowerCase())
+      ) {
         return false;
       }
-      // Sport
-      if (filters.sport !== 'All' && t.sport !== filters.sport) {
+      if (
+        filters.sport !== 'All' &&
+        !(t.sport || '').toLowerCase().includes(filters.sport.toLowerCase())
+      ) {
         return false;
       }
-      // Price
       if (t.pricePerHour < filters.minPrice || t.pricePerHour > filters.maxPrice) {
         return false;
       }
-      // Rating
       if (t.rating < minRating) {
         return false;
       }
-      // Availability — mock check: turf has at least one 'available' slot.
-      if (filters.availability === 'Available today') {
-        const hasOpen = t.availableSlots.some((s) => s.status === 'available');
-        if (!hasOpen) return false;
-      }
       return true;
     });
-  }, [query, filters]);
+  }, [turfList, query, filters, quickSport]);
 
-  // Count of active filters (used for the badge on the Filters button).
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (filters.location !== 'All') count++;
@@ -107,81 +139,143 @@ export default function ExploreScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <Header location={userLocation} />
-
-      {/* Search + filter row */}
-      <View style={styles.searchRow}>
-        <View style={{ flex: 1 }}>
-          <SearchBar
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search turfs..."
-          />
-        </View>
-        <TouchableOpacity
-          style={styles.filterBtn}
-          activeOpacity={0.8}
-          onPress={() => setShowFilters(true)}
-        >
-          <Ionicons name="options-outline" size={20} color={COLORS.textOnPrimary} />
-          {activeFilterCount > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{activeFilterCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Result count + active filters summary */}
-      <View style={styles.summaryRow}>
-        <Text style={styles.summary}>
-          {results.length} {results.length === 1 ? 'turf' : 'turfs'} found
-        </Text>
-      </View>
-
-      {/* Results */}
-      <ScrollView
-        style={styles.scroll}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+      {/* Stadium Header with Search + Filter Trigger + AI */}
+      <Header
+        location={userLocation}
+        onAiPress={() => openAi()}
       >
-        {results.length === 0 ? (
-          <View style={styles.empty}>
-            <Ionicons name="search-outline" size={48} color={COLORS.textMuted} />
-            <Text style={styles.emptyTitle}>No turfs found</Text>
+        <View style={styles.searchRow}>
+          <View style={{ flex: 1 }}>
+            <SearchBar
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search by arena, area (GEC, Halishahar)..."
+              style={styles.headerSearchBar}
+            />
+          </View>
+
+          <TouchableOpacity
+            style={[styles.filterBtn, activeFilterCount > 0 && styles.filterBtnActive]}
+            onPress={() => setShowFilters(true)}
+            activeOpacity={0.8}
+            accessibilityLabel="Filter options"
+          >
+            <Ionicons
+              name="options-outline"
+              size={18}
+              color={activeFilterCount > 0 ? COLORS.white : COLORS.forest}
+            />
+            {activeFilterCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{activeFilterCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+      </Header>
+
+      {/* Quick Sport Category Chips */}
+      <View style={styles.sportChipsWrap}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.sportChipsScroll}
+        >
+          {CATEGORIES.map((cat) => {
+            const active = quickSport === cat.id;
+            return (
+              <TouchableOpacity
+                key={cat.id}
+                style={[styles.sportChip, active && styles.sportChipActive]}
+                onPress={() => setQuickSport(cat.id)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.sportChipText, active && styles.sportChipTextActive]}>
+                  {cat.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
+
+      {/* Results Count & Reset Row */}
+      <View style={styles.summaryRow}>
+        <View style={styles.summaryCountRow}>
+          <Text style={styles.summaryText}>
+            {loading ? 'Scanning venues...' : `${results.length} Pitches Available`}
+          </Text>
+          <View style={styles.liveSlotDot} />
+        </View>
+        {(activeFilterCount > 0 || quickSport !== 'all' || query.length > 0) && (
+          <TouchableOpacity
+            onPress={() => {
+              setFilters(DEFAULT_FILTERS);
+              setQuickSport('all');
+              setQuery('');
+            }}
+          >
+            <Text style={styles.clearText}>Reset filters</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Venues List */}
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {loading ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator size="large" color={COLORS.field} />
+            <Text style={styles.loadingText}>Fetching available arenas...</Text>
+          </View>
+        ) : results.length === 0 ? (
+          <View style={styles.emptyWrap}>
+            <View style={styles.emptyIconCircle}>
+              <Ionicons name="search-outline" size={36} color={COLORS.forest} />
+            </View>
+            <Text style={styles.emptyTitle}>No matching pitches found</Text>
             <Text style={styles.emptySubtitle}>
-              Try changing your filters or search keywords.
+              Try adjusting your price range, sport format, or ask our AI concierge to recommend alternative venues.
             </Text>
+            <TouchableOpacity
+              style={styles.aiAskButton}
+              onPress={() => openAi('Suggest turfs in Chattogram under 2000 BDT')}
+            >
+              <Ionicons name="sparkles" size={16} color={COLORS.white} />
+              <Text style={styles.aiAskButtonText}>Ask AI to Find Turfs</Text>
+            </TouchableOpacity>
           </View>
         ) : (
-          <View style={styles.list}>
-            {results.map((turf) => (
-              <TurfCard
-                key={turf.id}
-                turf={turf}
-                onPress={() =>
-                  navigation.navigate('TurfDetails', { turfId: turf.id })
-                }
-              />
-            ))}
-          </View>
+          results.map((item) => (
+            <TurfCard
+              key={item.id}
+              turf={item}
+              onPress={() =>
+                navigation.navigate('TurfDetails', { turf: item, turfId: item.id })
+              }
+            />
+          ))
         )}
 
-        <View style={{ height: SPACING.xxl }} />
+        <View style={{ height: 30 }} />
       </ScrollView>
 
+      {/* Filter Bottom Sheet Modal */}
       <FilterModal
         visible={showFilters}
-        onClose={() => setShowFilters(false)}
         filters={filters}
         onApply={(next) => {
           setFilters(next);
           setShowFilters(false);
         }}
-        onReset={(cleared) => setFilters(cleared)}
-        locations={getAllLocations()}
-        sports={getAllSports()}
-        priceRange={PRICE_RANGE}
+        onReset={() => {
+          setFilters(DEFAULT_FILTERS);
+          setShowFilters(false);
+        }}
+        onClose={() => setShowFilters(false)}
       />
     </SafeAreaView>
   );
@@ -190,78 +284,172 @@ export default function ExploreScreen({ navigation }) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.forestDark,
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.md,
-    marginTop: -SPACING.lg,
+    gap: 8,
+    marginTop: 2,
+  },
+  headerSearchBar: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.pill,
+    ...SHADOWS.sm,
   },
   filterBtn: {
-    marginLeft: SPACING.md,
-    width: 48,
-    height: 48,
-    borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.primary,
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.mint,
+    borderWidth: 1.5,
+    borderColor: COLORS.field,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
+    ...SHADOWS.sm,
+  },
+  filterBtnActive: {
+    backgroundColor: COLORS.field,
+    borderColor: COLORS.field,
   },
   badge: {
     position: 'absolute',
-    top: 6,
-    right: 6,
-    backgroundColor: COLORS.danger,
-    borderRadius: 10,
-    minWidth: 18,
+    top: -3,
+    right: -3,
+    backgroundColor: COLORS.accent,
+    width: 18,
     height: 18,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: COLORS.card,
   },
   badgeText: {
-    color: COLORS.textOnPrimary,
-    fontSize: 10,
+    color: COLORS.white,
+    fontSize: 9,
+    fontWeight: FONT_WEIGHT.black,
+  },
+  sportChipsWrap: {
+    backgroundColor: COLORS.card,
+    paddingVertical: SPACING.sm + 2,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  sportChipsScroll: {
+    paddingHorizontal: SPACING.lg,
+    gap: 8,
+  },
+  sportChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.surfaceSubtle,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  sportChipActive: {
+    backgroundColor: COLORS.forest,
+    borderColor: COLORS.forest,
+  },
+  sportChipText: {
+    fontSize: FONT_SIZE.xs,
     fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.textSecondary,
+  },
+  sportChipTextActive: {
+    color: COLORS.white,
   },
   summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.md,
+    paddingVertical: SPACING.md,
     backgroundColor: COLORS.background,
   },
-  summary: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textMuted,
+  summaryCountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
-  scroll: {
+  summaryText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.textPrimary,
+  },
+  liveSlotDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: COLORS.field,
+  },
+  clearText: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.field,
+    fontWeight: FONT_WEIGHT.bold,
+  },
+  container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  scrollContent: {
-    paddingBottom: SPACING.xxl,
-  },
-  list: {
+  listContent: {
     paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.xs,
+    paddingBottom: 110,
   },
-  empty: {
+  loadingWrap: {
+    paddingVertical: SPACING.xxxl,
+    alignItems: 'center',
+    gap: 8,
+  },
+  loadingText: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textMuted,
+  },
+  emptyWrap: {
+    alignItems: 'center',
+    paddingVertical: SPACING.xxxl,
+    paddingHorizontal: SPACING.xl,
+  },
+  emptyIconCircle: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: COLORS.mint,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: SPACING.xxxl,
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.borderEmerald,
   },
   emptyTitle: {
     fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
+    fontWeight: FONT_WEIGHT.bold,
     color: COLORS.textPrimary,
-    marginTop: SPACING.md,
   },
   emptySubtitle: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: FONT_SIZE.xs + 1,
     color: COLORS.textMuted,
-    marginTop: SPACING.xs,
     textAlign: 'center',
-    paddingHorizontal: SPACING.xl,
+    marginTop: 6,
+    lineHeight: 18,
+  },
+  aiAskButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.forest,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: RADIUS.pill,
+    gap: 6,
+    marginTop: SPACING.lg,
+    ...SHADOWS.sm,
+  },
+  aiAskButtonText: {
+    color: COLORS.white,
+    fontSize: FONT_SIZE.xs + 1,
+    fontWeight: FONT_WEIGHT.bold,
   },
 });

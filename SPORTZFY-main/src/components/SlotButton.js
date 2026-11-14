@@ -1,17 +1,16 @@
-// Time-slot button with three visual states:
-// - status === 'available' + selected: green filled
-// - status === 'available' + not selected: white with green border
-// - status === 'booked': gray, disabled
-
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../constants/theme';
+import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../constants/theme';
 
 export default function SlotButton({ slot, isSelected, onPress, style }) {
-  const isAvailable = slot.status === 'available';
-  const isBooked = slot.status === 'booked';
+  const normalizedStatus = (slot.status || 'available').toLowerCase();
+  const isAvailable = normalizedStatus === 'available';
+  const isBooked =
+    normalizedStatus === 'booked' ||
+    normalizedStatus === 'blocked' ||
+    normalizedStatus === 'held';
 
-  // Visual state tokens
   let containerStyle = styles.available;
   let textStyle = styles.availableText;
 
@@ -23,60 +22,136 @@ export default function SlotButton({ slot, isSelected, onPress, style }) {
     textStyle = styles.selectedText;
   }
 
+  const timeLabel =
+    slot.timeLabel ||
+    (slot.startTime && slot.endTime
+      ? `${slot.startTime} – ${slot.endTime}`
+      : slot.startTime || 'Slot');
+
   return (
     <TouchableOpacity
       activeOpacity={0.8}
       disabled={isBooked}
       onPress={() => isAvailable && onPress && onPress(slot)}
-      style={[styles.base, containerStyle, style]}
+      style={[
+        styles.base,
+        containerStyle,
+        isSelected && SHADOWS.md,
+        style,
+      ]}
     >
-      <Text style={[styles.time, textStyle]}>
-        {slot.startTime} – {slot.endTime}
+      <Text style={[styles.time, textStyle]} numberOfLines={1}>
+        {timeLabel}
       </Text>
+
+      <View style={styles.priceRow}>
+        {slot.price ? (
+          <Text
+            style={[
+              styles.priceTag,
+              isSelected
+                ? styles.priceTagSelected
+                : isBooked
+                ? styles.priceTagBooked
+                : styles.priceTagAvailable,
+            ]}
+          >
+            ৳{slot.price}
+          </Text>
+        ) : null}
+
+        {isBooked ? (
+          <View style={styles.bookedPill}>
+            <Ionicons name="lock-closed" size={8} color={COLORS.textPlaceholder} />
+            <Text style={styles.bookedPillText}>Booked</Text>
+          </View>
+        ) : null}
+      </View>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   base: {
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.md,
-    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.sm + 4,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: RADIUS.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    minWidth: 130,
+    borderWidth: 1.5,
+    minHeight: 58,
   },
 
-  // Available
+  // Available State
   available: {
-    backgroundColor: COLORS.slotAvailableBg,
-    borderColor: COLORS.slotAvailableBorder,
+    backgroundColor: COLORS.white,
+    borderColor: COLORS.cardBorder,
+    ...SHADOWS.sm,
   },
   availableText: {
-    color: COLORS.slotAvailableText,
+    color: COLORS.forest,
+    fontSize: FONT_SIZE.xs + 1,
+    fontWeight: FONT_WEIGHT.bold,
   },
 
-  // Booked
+  // Booked State
   booked: {
-    backgroundColor: COLORS.slotBookedBg,
-    borderColor: COLORS.slotBookedBg,
+    backgroundColor: COLORS.surfaceSubtle,
+    borderColor: COLORS.border,
   },
   bookedText: {
-    color: COLORS.slotBookedText,
+    color: COLORS.textPlaceholder,
+    fontSize: FONT_SIZE.xs + 1,
+    fontWeight: FONT_WEIGHT.medium,
   },
 
-  // Selected
+  // Selected State
   selected: {
-    backgroundColor: COLORS.slotSelectedBg,
-    borderColor: COLORS.slotSelectedBg,
+    backgroundColor: COLORS.field,
+    borderColor: COLORS.fieldHover,
   },
   selectedText: {
-    color: COLORS.slotSelectedText,
+    color: COLORS.white,
+    fontSize: FONT_SIZE.xs + 1,
+    fontWeight: FONT_WEIGHT.black,
   },
 
   time: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.semibold,
+    textAlign: 'center',
+  },
+
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  priceTag: {
+    fontSize: 10,
+    fontWeight: FONT_WEIGHT.bold,
+  },
+  priceTagAvailable: {
+    color: COLORS.field,
+  },
+  priceTagSelected: {
+    color: '#ECFDF5',
+  },
+  priceTagBooked: {
+    color: COLORS.textPlaceholder,
+  },
+  bookedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: '#E2E8F0',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+  },
+  bookedPillText: {
+    fontSize: 8,
+    color: COLORS.textMuted,
+    fontWeight: FONT_WEIGHT.bold,
+    textTransform: 'uppercase',
   },
 });

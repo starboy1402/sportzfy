@@ -1,12 +1,10 @@
 // OwnerSlotTile — one slot in the owner's slot grid.
-// Shows start–end time, a status pill, and a tap-to-toggle affordance.
-// Booked slots are visually locked (grey + "Booked" label) and not tappable.
+// Modernized with Sportzfy Stadium design system and active state feedback.
 
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../constants/theme';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../constants/theme';
 
 function formatHour(hhmm) {
   const [h, m] = hhmm.split(':');
@@ -25,7 +23,7 @@ export default function OwnerSlotTile({ slot, onPress }) {
       onPress={isBooked ? null : onPress}
       style={({ pressed }) => [
         styles.tile,
-        isBooked && styles.tileBooked,
+        isBooked ? styles.tileBooked : styles.tileAvailable,
         pressed && !isBooked && styles.tilePressed,
       ]}
     >
@@ -34,18 +32,18 @@ export default function OwnerSlotTile({ slot, onPress }) {
           {formatHour(startTime)}
         </Text>
         <Text style={[styles.timeMuted, isBooked && styles.timeBooked]}>
-          to {formatHour(endTime)}
+          – {formatHour(endTime)}
         </Text>
       </View>
 
       <View style={[styles.pill, isBooked ? styles.pillBooked : styles.pillAvailable]}>
         <Ionicons
           name={isBooked ? 'lock-closed' : 'checkmark-circle'}
-          size={12}
-          color={isBooked ? COLORS.textMuted : COLORS.primary}
+          size={11}
+          color={isBooked ? COLORS.textPlaceholder : COLORS.forest}
         />
         <Text style={[styles.pillText, isBooked ? styles.pillTextBooked : styles.pillTextAvailable]}>
-          {isBooked ? 'Booked' : 'Available'}
+          {isBooked ? 'Reserved / Locked' : 'Open for Booking'}
         </Text>
       </View>
     </Pressable>
@@ -58,17 +56,20 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.lg,
     padding: SPACING.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    minHeight: 86,
+    minHeight: 82,
     justifyContent: 'space-between',
+    ...SHADOWS.sm,
+  },
+  tileAvailable: {
+    borderColor: COLORS.cardBorder,
   },
   tileBooked: {
-    backgroundColor: COLORS.slotBookedBg,
-    borderColor: COLORS.divider,
+    backgroundColor: COLORS.surfaceSubtle,
+    borderColor: COLORS.border,
   },
   tilePressed: {
-    opacity: 0.7,
-    borderColor: COLORS.primary,
+    opacity: 0.8,
+    borderColor: COLORS.field,
   },
   timeWrap: {
     flexDirection: 'row',
@@ -81,34 +82,35 @@ const styles = StyleSheet.create({
   },
   timeMuted: {
     fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
-    marginLeft: 4,
+    color: COLORS.textMuted,
+    marginLeft: 3,
   },
   timeBooked: {
-    color: COLORS.textMuted,
+    color: COLORS.textPlaceholder,
   },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    paddingHorizontal: SPACING.sm,
+    paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: RADIUS.pill,
-    marginTop: SPACING.sm,
+    gap: 4,
   },
   pillAvailable: {
-    backgroundColor: '#E8F4EC',
+    backgroundColor: COLORS.mint,
+    borderWidth: 1,
+    borderColor: COLORS.borderEmerald,
   },
   pillBooked: {
-    backgroundColor: COLORS.background,
+    backgroundColor: '#E2E8F0',
   },
   pillText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    marginLeft: 4,
+    fontSize: 9,
+    fontWeight: FONT_WEIGHT.bold,
   },
   pillTextAvailable: {
-    color: COLORS.primary,
+    color: COLORS.forest,
   },
   pillTextBooked: {
     color: COLORS.textMuted,

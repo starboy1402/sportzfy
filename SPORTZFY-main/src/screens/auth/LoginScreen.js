@@ -1,8 +1,3 @@
-// LoginScreen — first screen a guest sees.
-// Asks for email (or phone) + password, plus a role picker so the user can
-// decide which app they want to enter (Customer / Turf Owner / Admin).
-// All values are mocked — see AuthContext for the fake auth flow.
-
 import React, { useState } from 'react';
 import {
   View,
@@ -13,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,22 +16,22 @@ import { Ionicons } from '@expo/vector-icons';
 import PrimaryButton from '../../components/PrimaryButton';
 import SegmentedControl from '../../components/SegmentedControl';
 import { useAuth } from '../../context/AuthContext';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../constants/theme';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../constants/theme';
 
-// Only two roles ship for now. Admin role UI is deferred.
 const ROLE_OPTIONS = [
-  { id: 'customer', label: 'Customer' },
+  { id: 'customer', label: 'Player' },
   { id: 'owner', label: 'Turf Owner' },
 ];
 
 export default function LoginScreen({ navigation }) {
   const { login, loading } = useAuth();
 
-  const [identifier, setIdentifier] = useState(''); // email or phone
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [role, setRole] = useState('customer');
   const [error, setError] = useState('');
+  const [quickLoadingRole, setQuickLoadingRole] = useState(null);
 
   function handleLogin() {
     setError('');
@@ -54,7 +50,25 @@ export default function LoginScreen({ navigation }) {
       password,
       role,
     }).catch((err) => {
+      setError(err?.message || 'Login failed. Please check your credentials.');
+    });
+  }
+
+  function handleQuickLogin(demoEmail, demoPassword, demoRole) {
+    setError('');
+    setIdentifier(demoEmail);
+    setPassword(demoPassword);
+    setRole(demoRole === 'admin' ? 'customer' : demoRole);
+    setQuickLoadingRole(demoRole);
+
+    login({
+      email: demoEmail,
+      password: demoPassword,
+      role: demoRole,
+    }).catch((err) => {
       setError(err?.message || 'Login failed. Please try again.');
+    }).finally(() => {
+      setQuickLoadingRole(null);
     });
   }
 
@@ -72,15 +86,70 @@ export default function LoginScreen({ navigation }) {
           {/* Brand block */}
           <View style={styles.brand}>
             <View style={styles.logoCircle}>
-              <Ionicons name="football" size={36} color={COLORS.textOnPrimary} />
+              <Ionicons name="football" size={36} color={COLORS.white} />
             </View>
-            <Text style={styles.brandTitle}>Sportzfy</Text>
-            <Text style={styles.brandSub}>Sign in to book & manage turfs</Text>
+            <Text style={styles.brandTitle}>SPORTZFY</Text>
+            <Text style={styles.brandSub}>Book Pitches. Play Matches. Dominate.</Text>
           </View>
 
-          {/* Card */}
+          {/* Quick 1-Tap Demo Logins */}
+          <View style={styles.quickLoginCard}>
+            <View style={styles.quickHeader}>
+              <Ionicons name="flash" size={16} color={COLORS.primary} />
+              <Text style={styles.quickHeaderTitle}>1-TAP QUICK DEMO LOGIN</Text>
+            </View>
+            <Text style={styles.quickHeaderSub}>
+              Tap either profile below to sign in instantly without typing:
+            </Text>
+
+            <View style={styles.quickBtnRow}>
+              {/* Player Button */}
+              <TouchableOpacity
+                style={styles.quickBtn}
+                onPress={() => handleQuickLogin('player@sportzfy.com', 'sportzfy123', 'customer')}
+                disabled={loading}
+                activeOpacity={0.7}
+              >
+                {quickLoadingRole === 'customer' ? (
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                ) : (
+                  <>
+                    <Text style={styles.quickEmoji}>⚽</Text>
+                    <Text style={styles.quickRoleText}>Player</Text>
+                    <Text style={styles.quickNameText}>Sakib</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              {/* Turf Owner Button */}
+              <TouchableOpacity
+                style={styles.quickBtn}
+                onPress={() => handleQuickLogin('owner@sportzfy.com', 'sportzfy123', 'owner')}
+                disabled={loading}
+                activeOpacity={0.7}
+              >
+                {quickLoadingRole === 'owner' ? (
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                ) : (
+                  <>
+                    <Text style={styles.quickEmoji}>🏟️</Text>
+                    <Text style={styles.quickRoleText}>Turf Owner</Text>
+                    <Text style={styles.quickNameText}>Tariqul</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Form Card */}
           <View style={styles.card}>
-            <Text style={styles.label}>Email or phone</Text>
+            <View style={styles.orDivider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR SIGN IN WITH ACCOUNT</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <Text style={styles.label}>Email or Mobile Number</Text>
             <View style={styles.inputWrap}>
               <Ionicons
                 name="person-outline"
@@ -90,8 +159,8 @@ export default function LoginScreen({ navigation }) {
               />
               <TextInput
                 style={styles.input}
-                placeholder="you@example.com"
-                placeholderTextColor={COLORS.textMuted}
+                placeholder="player@sportzfy.com"
+                placeholderTextColor={COLORS.textPlaceholder}
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="email-address"
@@ -100,7 +169,7 @@ export default function LoginScreen({ navigation }) {
               />
             </View>
 
-            <Text style={styles.label}>Password</Text>
+            <Text style={styles.label}>Account Password</Text>
             <View style={styles.inputWrap}>
               <Ionicons
                 name="lock-closed-outline"
@@ -111,7 +180,7 @@ export default function LoginScreen({ navigation }) {
               <TextInput
                 style={styles.input}
                 placeholder="••••••••"
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={COLORS.textPlaceholder}
                 secureTextEntry={!showPwd}
                 value={password}
                 onChangeText={setPassword}
@@ -123,13 +192,13 @@ export default function LoginScreen({ navigation }) {
               >
                 <Ionicons
                   name={showPwd ? 'eye-off-outline' : 'eye-outline'}
-                  size={20}
+                  size={19}
                   color={COLORS.textMuted}
                 />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.label}>Sign in as</Text>
+            <Text style={styles.label}>Signing in as</Text>
             <SegmentedControl options={ROLE_OPTIONS} value={role} onChange={setRole} />
 
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -137,8 +206,8 @@ export default function LoginScreen({ navigation }) {
             <View style={{ height: SPACING.lg }} />
 
             <PrimaryButton
-              title={loading ? 'Signing in...' : 'Sign In'}
-              loading={loading}
+              title={loading && !quickLoadingRole ? 'Verifying...' : 'Sign In'}
+              loading={loading && !quickLoadingRole}
               onPress={handleLogin}
             />
 
@@ -147,14 +216,14 @@ export default function LoginScreen({ navigation }) {
               onPress={() => navigation.navigate('SignUp')}
             >
               <Text style={styles.signupText}>
-                Don't have an account?{' '}
-                <Text style={styles.signupLink}>Sign up</Text>
+                New to Sportzfy?{' '}
+                <Text style={styles.signupLink}>Create an account</Text>
               </Text>
             </TouchableOpacity>
           </View>
 
           <Text style={styles.legal}>
-            By continuing you agree to Sportzfy's Terms & Privacy.
+            By signing in you accept Sportzfy's Terms of Play & Privacy.
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -169,53 +238,131 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: SPACING.lg,
-    paddingTop: SPACING.xxl,
+    paddingTop: SPACING.xl,
   },
   brand: {
     alignItems: 'center',
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.lg,
   },
   logoCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm,
+    ...SHADOWS.md,
   },
   brandTitle: {
     fontSize: FONT_SIZE.xxxl,
-    fontWeight: FONT_WEIGHT.bold,
+    fontWeight: FONT_WEIGHT.black,
     color: COLORS.primary,
+    letterSpacing: 1,
   },
   brandSub: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: FONT_SIZE.xs + 1,
     color: COLORS.textMuted,
-    marginTop: SPACING.xs,
+    marginTop: 2,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+  quickLoginCard: {
+    backgroundColor: COLORS.primarySurface,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.primaryTint,
+    marginBottom: SPACING.md,
+    ...SHADOWS.sm,
+  },
+  quickHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  quickHeaderTitle: {
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.primary,
+    marginLeft: 6,
+    letterSpacing: 0.5,
+  },
+  quickHeaderSub: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.sm,
+  },
+  quickBtnRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: SPACING.sm,
+  },
+  quickBtn: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    paddingVertical: SPACING.sm + 4,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.primaryTint,
+    ...SHADOWS.sm,
+  },
+  quickEmoji: {
+    fontSize: 22,
+    marginBottom: 2,
+  },
+  quickRoleText: {
+    fontSize: FONT_SIZE.xs + 1,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.primaryDark,
+  },
+  quickNameText: {
+    fontSize: 10,
+    color: COLORS.textMuted,
+    marginTop: 1,
   },
   card: {
     backgroundColor: COLORS.card,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     padding: SPACING.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
+    ...SHADOWS.md,
+  },
+  orDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.divider,
+  },
+  dividerText: {
+    fontSize: 10,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.textMuted,
+    marginHorizontal: SPACING.sm,
+    letterSpacing: 0.5,
   },
   label: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
+    fontSize: FONT_SIZE.xs + 1,
+    fontWeight: FONT_WEIGHT.bold,
     color: COLORS.textSecondary,
-    marginTop: SPACING.md,
+    marginTop: SPACING.sm,
     marginBottom: SPACING.xs,
   },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
-    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
     paddingHorizontal: SPACING.md,
+    ...SHADOWS.sm,
   },
   inputIcon: {
     marginRight: SPACING.sm,
@@ -239,17 +386,18 @@ const styles = StyleSheet.create({
   },
   signupLink: {
     color: COLORS.primary,
-    fontWeight: FONT_WEIGHT.semibold,
+    fontWeight: FONT_WEIGHT.bold,
   },
   errorText: {
     color: COLORS.danger,
     fontSize: FONT_SIZE.sm,
     marginTop: SPACING.md,
     textAlign: 'center',
+    fontWeight: FONT_WEIGHT.medium,
   },
   legal: {
     textAlign: 'center',
-    fontSize: FONT_SIZE.xs,
+    fontSize: 11,
     color: COLORS.textMuted,
     marginTop: SPACING.lg,
   },

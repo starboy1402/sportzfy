@@ -1,10 +1,8 @@
-// MiniBarChart — pure-RN bar chart (no SVG dependency).
-// Renders one vertical bar per data point, scaled to the chart height.
-// The tallest bar is highlighted in green; shorter bars use a light tint.
+// MiniBarChart — pure-RN weekly revenue bar chart.
+// Renders vertical bars scaled to chart height, with peak day highlighted in Field Emerald.
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../constants/theme';
 
 export default function MiniBarChart({ data, height = 120 }) {
@@ -13,36 +11,51 @@ export default function MiniBarChart({ data, height = 120 }) {
   const max = Math.max(...data.map((d) => d.value), 1);
 
   return (
-    <View>
+    <View style={styles.container}>
       <View style={[styles.row, { height }]}>
         {data.map((point, idx) => {
-          // Leave 8px headroom so the tallest bar isn't flush with the top.
-          const barHeight = Math.max(8, Math.round((point.value / max) * (height - 24)));
+          const barHeight = Math.max(10, Math.round((point.value / max) * (height - 28)));
           const isMax = point.value === max;
           return (
             <View key={idx} style={styles.col}>
               <Text style={[styles.barValue, isMax && styles.barValueMax]}>
                 ৳{(point.value / 1000).toFixed(1)}k
               </Text>
-              <View style={[styles.bar, { height: barHeight, backgroundColor: isMax ? COLORS.primary : '#D6E8DC' }]} />
+              <View
+                style={[
+                  styles.bar,
+                  {
+                    height: barHeight,
+                    backgroundColor: isMax ? COLORS.field : '#D1FAE5',
+                  },
+                ]}
+              />
             </View>
           );
         })}
       </View>
 
       {/* Day labels row */}
-      <View style={styles.row}>
-        {data.map((point, idx) => (
-          <View key={idx} style={styles.col}>
-            <Text style={styles.dayLabel}>{point.day}</Text>
-          </View>
-        ))}
+      <View style={styles.daysRow}>
+        {data.map((point, idx) => {
+          const isMax = point.value === max;
+          return (
+            <View key={idx} style={styles.col}>
+              <Text style={[styles.dayLabel, isMax && styles.dayLabelMax]}>
+                {point.day}
+              </Text>
+            </View>
+          );
+        })}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    paddingVertical: SPACING.sm,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -53,22 +66,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   bar: {
-    width: '60%',
+    width: '58%',
     borderTopLeftRadius: RADIUS.sm,
     borderTopRightRadius: RADIUS.sm,
   },
   barValue: {
     fontSize: 9,
     color: COLORS.textMuted,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   barValueMax: {
-    color: COLORS.primary,
-    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.forest,
+    fontWeight: FONT_WEIGHT.black,
+  },
+  daysRow: {
+    flexDirection: 'row',
+    marginTop: 6,
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderLight,
   },
   dayLabel: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
-    marginTop: SPACING.xs,
+    fontSize: 10,
+    color: COLORS.textMuted,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+  dayLabelMax: {
+    color: COLORS.forest,
+    fontWeight: FONT_WEIGHT.black,
   },
 });

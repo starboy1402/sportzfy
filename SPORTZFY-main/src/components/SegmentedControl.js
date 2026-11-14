@@ -1,24 +1,32 @@
-// Reusable segmented control used by Bookings tabs (Upcoming / Completed / Cancelled)
-// and by BookingsScreen to switch between "Bookings" and "Profile" views.
-//
+// Reusable segmented control.
 // Props:
-//   options: [{ id, label }]
-//   value: currently selected id
+//   options or tabs: [{ id, label }]
+//   value or activeTab: currently selected id
 //   onChange: (id) => void
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../constants/theme';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../constants/theme';
 
-export default function SegmentedControl({ options, value, onChange, style }) {
+export default function SegmentedControl({
+  options,
+  tabs,
+  value,
+  activeTab,
+  onChange,
+  style,
+}) {
+  const items = options || tabs || [];
+  const selected = value !== undefined ? value : activeTab;
+
   return (
     <View style={[styles.container, style]}>
-      {options.map((opt) => {
-        const isSelected = opt.id === value;
+      {items.map((opt) => {
+        const isSelected = opt.id === selected;
         return (
           <TouchableOpacity
             key={opt.id}
-            activeOpacity={0.85}
+            activeOpacity={0.8}
             onPress={() => onChange && onChange(opt.id)}
             style={[styles.segment, isSelected && styles.segmentSelected]}
           >
@@ -35,9 +43,11 @@ export default function SegmentedControl({ options, value, onChange, style }) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.surfaceSubtle,
     borderRadius: RADIUS.pill,
-    padding: 4,
+    padding: 3,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   segment: {
     flex: 1,
@@ -49,13 +59,15 @@ const styles = StyleSheet.create({
   },
   segmentSelected: {
     backgroundColor: COLORS.primary,
+    ...SHADOWS.sm,
   },
   label: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: FONT_SIZE.xs + 1,
     fontWeight: FONT_WEIGHT.semibold,
     color: COLORS.textSecondary,
   },
   labelSelected: {
-    color: COLORS.textOnPrimary,
+    color: COLORS.white,
+    fontWeight: FONT_WEIGHT.bold,
   },
 });

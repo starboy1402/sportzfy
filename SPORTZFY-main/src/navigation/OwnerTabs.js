@@ -1,8 +1,5 @@
-// Bottom-tabs navigator for the owner app.
-// 3 tabs: Dashboard / Turf / Bookings.
-// Owner-specific styling mirrors the customer BottomTabs.
-
 import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -10,13 +7,19 @@ import OwnerDashboardScreen from '../screens/owner/OwnerDashboardScreen';
 import OwnerTurfScreen from '../screens/owner/OwnerTurfScreen';
 import OwnerBookingsScreen from '../screens/owner/OwnerBookingsScreen';
 import ProfileScreen from '../screens/customer/ProfileScreen';
-import { COLORS, FONT_SIZE, FONT_WEIGHT } from '../constants/theme';
+import { COLORS, FONT_WEIGHT, SHADOWS } from '../constants/theme';
 
 const Tab = createBottomTabNavigator();
 
-function tabIcon(name) {
-  return ({ color, size }) => (
-    <Ionicons name={name} size={size} color={color} />
+function tabIcon(activeName, inactiveName) {
+  return ({ focused, color, size }) => (
+    <View style={focused ? styles.activeTabIconContainer : null}>
+      <Ionicons
+        name={focused ? activeName : inactiveName}
+        size={focused ? 23 : 21}
+        color={color}
+      />
+    </View>
   );
 }
 
@@ -25,41 +28,62 @@ export default function OwnerTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: COLORS.primary,
+        tabBarActiveTintColor: COLORS.field,
         tabBarInactiveTintColor: COLORS.textMuted,
         tabBarStyle: {
           backgroundColor: COLORS.card,
-          borderTopColor: COLORS.border,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 6,
+          borderTopColor: COLORS.cardBorder,
+          borderTopWidth: 1,
+          height: 66,
+          paddingBottom: 10,
+          paddingTop: 8,
+          ...SHADOWS.md,
         },
         tabBarLabelStyle: {
-          fontSize: FONT_SIZE.xs,
-          fontWeight: FONT_WEIGHT.medium,
+          fontSize: 10,
+          fontWeight: FONT_WEIGHT.bold,
+          marginTop: 2,
         },
       }}
     >
       <Tab.Screen
         name="Dashboard"
         component={OwnerDashboardScreen}
-        options={{ tabBarIcon: tabIcon('grid-outline') }}
+        options={{
+          tabBarLabel: 'Overview',
+          tabBarIcon: tabIcon('speedometer', 'speedometer-outline'),
+        }}
       />
       <Tab.Screen
         name="Turf"
         component={OwnerTurfScreen}
-        options={{ tabBarIcon: tabIcon('football-outline') }}
+        options={{
+          tabBarLabel: 'My Pitches',
+          tabBarIcon: tabIcon('football', 'football-outline'),
+        }}
       />
       <Tab.Screen
         name="Bookings"
         component={OwnerBookingsScreen}
-        options={{ tabBarIcon: tabIcon('calendar-outline') }}
+        options={{
+          tabBarLabel: 'Check-In',
+          tabBarIcon: tabIcon('qr-code', 'qr-code-outline'),
+        }}
       />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{ tabBarIcon: tabIcon('person-outline') }}
+        options={{
+          tabBarLabel: 'Account',
+          tabBarIcon: tabIcon('person', 'person-outline'),
+        }}
       />
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  activeTabIconContainer: {
+    transform: [{ scale: 1.05 }],
+  },
+});

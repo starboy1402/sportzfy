@@ -1,5 +1,5 @@
-// Reusable turf card used in Home (sections) and Explore (results).
-// Vertical layout: image -> name + rating -> location -> price + availability -> Book button.
+// Reusable turf card with stadium aesthetic, live badges, amenities, and slot preview.
+// Used across Home, Explore, and Search results.
 
 import React from 'react';
 import {
@@ -9,49 +9,104 @@ import {
   Image,
   TouchableOpacity,
 } from 'react-native';
-import Rating from './Rating';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../constants/theme';
 
 export default function TurfCard({ turf, onPress, style }) {
+  const sportName = turf.sport || turf.pitchFormats?.split(',')[0] || 'Football';
+  const formatName = turf.pitchFormats || '7v7 Astroturf';
+
+  const defaultImg =
+    'https://images.unsplash.com/photo-1529900245534-47fbf02a44dd?auto=format&fit=crop&w=800&q=80';
+
   return (
     <TouchableOpacity
-      activeOpacity={0.85}
+      activeOpacity={0.9}
       onPress={() => onPress && onPress(turf)}
       style={[styles.card, style]}
     >
-      <Image source={{ uri: turf.image }} style={styles.image} />
+      {/* Stadium Hero Image & Badges */}
+      <View style={styles.imageWrapper}>
+        <Image
+          source={{ uri: turf.image || turf.coverImage || defaultImg }}
+          style={styles.image}
+        />
 
+        {/* Gradient / Dark overlay */}
+        <View style={styles.imageOverlay} />
+
+        {/* Sport & Format Badge (Top-Left) */}
+        <View style={styles.formatBadge}>
+          <Ionicons name="football" size={11} color={COLORS.white} />
+          <Text style={styles.formatBadgeText}>{formatName}</Text>
+        </View>
+
+        {/* Rating Pill (Top-Right) */}
+        <View style={styles.ratingBadge}>
+          <Ionicons name="star" size={12} color="#F59E0B" />
+          <Text style={styles.ratingText}>
+            {typeof turf.rating === 'number' ? turf.rating.toFixed(1) : '4.8'}
+          </Text>
+        </View>
+
+        {/* Live Slot Status Pill (Bottom-Left over image) */}
+        <View style={styles.availabilityPill}>
+          <View style={styles.greenPulseDot} />
+          <Text style={styles.availabilityText}>Available Slots Today</Text>
+        </View>
+      </View>
+
+      {/* Card Content Body */}
       <View style={styles.body}>
-        <View style={styles.headerRow}>
+        <View style={styles.titleRow}>
           <Text style={styles.name} numberOfLines={1}>
             {turf.name}
           </Text>
-          <Rating rating={turf.rating} />
         </View>
 
-        <Text style={styles.location} numberOfLines={1}>
-          📍 {turf.location}
-        </Text>
+        <View style={styles.locationRow}>
+          <Ionicons name="location-sharp" size={13} color={COLORS.field} />
+          <Text style={styles.location} numberOfLines={1}>
+            {turf.area ? `${turf.area}, ${turf.city || 'Chattogram'}` : (turf.location || 'Chattogram')}
+          </Text>
+          <Text style={styles.bulletDot}>•</Text>
+          <Text style={styles.distanceText}>1.2 km</Text>
+        </View>
 
-        <View style={styles.metaRow}>
-          <View style={styles.sportTag}>
-            <Text style={styles.sportText}>{turf.sport}</Text>
+        {/* Amenities Icons Row */}
+        <View style={styles.amenitiesRow}>
+          <View style={styles.amenityItem}>
+            <Ionicons name="flash" size={11} color={COLORS.forest} />
+            <Text style={styles.amenityText}>Floodlit</Text>
           </View>
-          <Text style={styles.price}>৳{turf.pricePerHour}/hour</Text>
+          <View style={styles.amenityItem}>
+            <Ionicons name="car" size={11} color={COLORS.forest} />
+            <Text style={styles.amenityText}>Parking</Text>
+          </View>
+          <View style={styles.amenityItem}>
+            <Ionicons name="shield-checkmark" size={11} color={COLORS.forest} />
+            <Text style={styles.amenityText}>Verified</Text>
+          </View>
         </View>
 
+        {/* Price & CTA Divider */}
+        <View style={styles.cardDivider} />
+
+        {/* Footer: Price & Book Button */}
         <View style={styles.footerRow}>
-          <View style={styles.availableDot}>
-            <View style={styles.greenDot} />
-            <Text style={styles.availableText}>Available</Text>
+          <View>
+            <Text style={styles.priceLabel}>Starting from</Text>
+            <View style={styles.priceRow}>
+              <Text style={styles.priceCurrency}>৳</Text>
+              <Text style={styles.priceValue}>{turf.pricePerHour || turf.basePricePerHour || 2000}</Text>
+              <Text style={styles.priceUnit}>/hour</Text>
+            </View>
           </View>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => onPress && onPress(turf)}
-            style={styles.bookButton}
-          >
-            <Text style={styles.bookButtonText}>View</Text>
-          </TouchableOpacity>
+
+          <View style={styles.bookButton}>
+            <Text style={styles.bookButtonText}>Book Slot</Text>
+            <Ionicons name="chevron-forward" size={14} color={COLORS.white} />
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -61,90 +116,195 @@ export default function TurfCard({ turf, onPress, style }) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.card,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     overflow: 'hidden',
     marginBottom: SPACING.lg,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.cardBorder,
+    ...SHADOWS.md,
+  },
+  imageWrapper: {
+    width: '100%',
+    height: 165,
+    backgroundColor: COLORS.surfaceSubtle,
+    position: 'relative',
   },
   image: {
     width: '100%',
-    height: 150,
-    backgroundColor: COLORS.divider,
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  imageOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(2, 44, 34, 0.25)',
+  },
+  formatBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(2, 44, 34, 0.85)',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.4)',
+    gap: 5,
+  },
+  formatBadgeText: {
+    color: COLORS.white,
+    fontSize: 11,
+    fontWeight: FONT_WEIGHT.bold,
+  },
+  ratingBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: RADIUS.pill,
+    gap: 3,
+    ...SHADOWS.sm,
+  },
+  ratingText: {
+    color: COLORS.textPrimary,
+    fontSize: 12,
+    fontWeight: FONT_WEIGHT.black,
+  },
+  availabilityPill: {
+    position: 'absolute',
+    bottom: 10,
+    left: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: RADIUS.pill,
+    gap: 5,
+  },
+  greenPulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: COLORS.field,
+  },
+  availabilityText: {
+    color: COLORS.forest,
+    fontSize: 10,
+    fontWeight: FONT_WEIGHT.bold,
   },
   body: {
-    padding: SPACING.lg,
+    padding: SPACING.md + 2,
   },
-  headerRow: {
+  titleRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.xs,
+    justifyContent: 'space-between',
   },
   name: {
-    flex: 1,
     fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.textPrimary,
-    marginRight: SPACING.sm,
+    letterSpacing: 0.1,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 4,
   },
   location: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
-    marginBottom: SPACING.md,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  sportTag: {
-    backgroundColor: COLORS.background,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
-    borderRadius: RADIUS.pill,
-  },
-  sportText: {
     fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primary,
+    color: COLORS.textMuted,
+    maxWidth: '65%',
   },
-  price: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
+  bulletDot: {
+    color: COLORS.textPlaceholder,
+    fontSize: 10,
+  },
+  distanceText: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.forest,
+    fontWeight: FONT_WEIGHT.semibold,
+  },
+  amenitiesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+  },
+  amenityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.mint,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
+    gap: 3,
+  },
+  amenityText: {
+    fontSize: 10,
+    color: COLORS.forest,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+  cardDivider: {
+    height: 1,
+    backgroundColor: COLORS.cardBorder,
+    marginTop: 10,
+    marginBottom: 10,
   },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  availableDot: {
+  priceLabel: {
+    fontSize: 9,
+    color: COLORS.textMuted,
+    textTransform: 'uppercase',
+    fontWeight: FONT_WEIGHT.bold,
+    letterSpacing: 0.5,
+  },
+  priceRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'baseline',
+    marginTop: 1,
   },
-  greenDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.success,
-    marginRight: SPACING.xs,
-  },
-  availableText: {
+  priceCurrency: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.success,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.forest,
+    marginRight: 1,
+  },
+  priceValue: {
+    fontSize: FONT_SIZE.xl,
+    fontWeight: FONT_WEIGHT.black,
+    color: COLORS.forest,
+  },
+  priceUnit: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.textMuted,
+    marginLeft: 2,
     fontWeight: FONT_WEIGHT.medium,
   },
   bookButton: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.sm,
-    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.field,
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+    borderRadius: RADIUS.pill,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    ...SHADOWS.sm,
   },
   bookButtonText: {
-    color: COLORS.textOnPrimary,
+    color: COLORS.white,
     fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
+    fontWeight: FONT_WEIGHT.bold,
   },
 });

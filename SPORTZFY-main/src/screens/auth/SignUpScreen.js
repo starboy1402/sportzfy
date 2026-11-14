@@ -1,6 +1,4 @@
-// SignUpScreen — multi-field register form. The role picker decides
-// which app shell the new user lands in (Customer / Turf Owner / Admin).
-// All values are mocked — see AuthContext for the fake auth flow.
+// SignUpScreen — Player and Turf Owner registration.
 
 import React, { useState } from 'react';
 import {
@@ -19,11 +17,10 @@ import { Ionicons } from '@expo/vector-icons';
 import PrimaryButton from '../../components/PrimaryButton';
 import SegmentedControl from '../../components/SegmentedControl';
 import { useAuth } from '../../context/AuthContext';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../constants/theme';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../constants/theme';
 
-// Only two roles ship for now. Admin role UI is deferred.
 const ROLE_OPTIONS = [
-  { id: 'customer', label: 'Customer' },
+  { id: 'customer', label: 'Player' },
   { id: 'owner', label: 'Turf Owner' },
 ];
 
@@ -49,7 +46,7 @@ export default function SignUpScreen({ navigation }) {
       return;
     }
     if (!email.trim() || !email.includes('@')) {
-      setError('Please enter a valid email.');
+      setError('Please enter a valid email address.');
       return;
     }
     if (password.length < 6) {
@@ -79,50 +76,50 @@ export default function SignUpScreen({ navigation }) {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Top bar with back */}
+          {/* Top bar with back button */}
           <View style={styles.topBar}>
             <TouchableOpacity
               style={styles.backBtn}
               onPress={() => navigation.goBack()}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Ionicons name="chevron-back" size={22} color={COLORS.textPrimary} />
+              <Ionicons name="chevron-back" size={20} color={COLORS.textPrimary} />
             </TouchableOpacity>
-            <Text style={styles.topTitle}>Create account</Text>
-            <View style={{ width: 36 }} />
+            <Text style={styles.topTitle}>Create Player Account</Text>
+            <View style={{ width: 40 }} />
           </View>
 
-          {/* Card */}
+          {/* Form Card */}
           <View style={styles.card}>
             <Field
-              label="Full name"
+              label="Full Name"
               icon="person-outline"
-              placeholder="Your full name"
+              placeholder="e.g. Sakib Al Hasan"
               value={name}
               onChangeText={setName}
               autoCapitalize="words"
             />
 
             <Field
-              label="Phone"
+              label="Mobile Number"
               icon="call-outline"
-              placeholder="+880 1XXX-XXXXXX"
+              placeholder="+880 1700-000000"
               value={phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
             />
 
             <Field
-              label="Email"
+              label="Email Address"
               icon="mail-outline"
-              placeholder="you@example.com"
+              placeholder="you@domain.com"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
             />
 
-            <Text style={styles.label}>Password</Text>
+            <Text style={styles.label}>Account Password</Text>
             <View style={styles.inputWrap}>
               <Ionicons
                 name="lock-closed-outline"
@@ -133,7 +130,7 @@ export default function SignUpScreen({ navigation }) {
               <TextInput
                 style={styles.input}
                 placeholder="At least 6 characters"
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={COLORS.textPlaceholder}
                 secureTextEntry={!showPwd}
                 value={password}
                 onChangeText={setPassword}
@@ -145,13 +142,13 @@ export default function SignUpScreen({ navigation }) {
               >
                 <Ionicons
                   name={showPwd ? 'eye-off-outline' : 'eye-outline'}
-                  size={20}
+                  size={19}
                   color={COLORS.textMuted}
                 />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.label}>I am signing up as</Text>
+            <Text style={styles.label}>Register as</Text>
             <SegmentedControl options={ROLE_OPTIONS} value={role} onChange={setRole} />
 
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -159,7 +156,7 @@ export default function SignUpScreen({ navigation }) {
             <View style={{ height: SPACING.lg }} />
 
             <PrimaryButton
-              title={loading ? 'Creating account...' : 'Create Account'}
+              title={loading ? 'Registering...' : 'Create Account'}
               loading={loading}
               onPress={handleRegister}
             />
@@ -169,7 +166,7 @@ export default function SignUpScreen({ navigation }) {
               onPress={() => navigation.goBack()}
             >
               <Text style={styles.loginText}>
-                Already have an account?{' '}
+                Already registered?{' '}
                 <Text style={styles.loginLink}>Sign in</Text>
               </Text>
             </TouchableOpacity>
@@ -180,7 +177,6 @@ export default function SignUpScreen({ navigation }) {
   );
 }
 
-// Reusable text field row.
 function Field({ label, icon, ...inputProps }) {
   return (
     <>
@@ -194,7 +190,7 @@ function Field({ label, icon, ...inputProps }) {
         />
         <TextInput
           style={styles.input}
-          placeholderTextColor={COLORS.textMuted}
+          placeholderTextColor={COLORS.textPlaceholder}
           {...inputProps}
         />
       </View>
@@ -218,30 +214,32 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.card,
+    backgroundColor: COLORS.white,
     borderWidth: 1,
     borderColor: COLORS.border,
+    ...SHADOWS.sm,
   },
   topTitle: {
     fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
+    fontWeight: FONT_WEIGHT.bold,
     color: COLORS.textPrimary,
   },
   card: {
     backgroundColor: COLORS.card,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     padding: SPACING.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
+    ...SHADOWS.md,
   },
   label: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
+    fontSize: FONT_SIZE.xs + 1,
+    fontWeight: FONT_WEIGHT.bold,
     color: COLORS.textSecondary,
     marginTop: SPACING.md,
     marginBottom: SPACING.xs,
@@ -249,11 +247,12 @@ const styles = StyleSheet.create({
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
-    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
     paddingHorizontal: SPACING.md,
+    ...SHADOWS.sm,
   },
   inputIcon: {
     marginRight: SPACING.sm,
@@ -277,12 +276,13 @@ const styles = StyleSheet.create({
   },
   loginLink: {
     color: COLORS.primary,
-    fontWeight: FONT_WEIGHT.semibold,
+    fontWeight: FONT_WEIGHT.bold,
   },
   errorText: {
     color: COLORS.danger,
     fontSize: FONT_SIZE.sm,
     marginTop: SPACING.md,
     textAlign: 'center',
+    fontWeight: FONT_WEIGHT.medium,
   },
 });

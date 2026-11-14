@@ -1,16 +1,5 @@
-// AuthContext — holds the signed-in user and exposes login / register / logout.
-//
-// Shape:
-//   user:  null (guest) | { id, name, phone, email, role }
-//   role:  derived from user.role  ('customer' | 'owner' | 'admin')
-//
-// Both `login` and `register` are mocked — they return a fake user after a
-// short delay so the UI can show a loading state. Replace with real API
-// calls later.
-//
-// Logout clears the user; RootNavigator then bounces back to AuthStack.
-
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
+import { api } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -22,52 +11,98 @@ export function useAuth() {
   return ctx;
 }
 
-// Fake user factory — phone or email + any password "succeeds".
-function mockUserFor({ email, phone, name, role }) {
-  const id = `u_${Date.now().toString(36)}`;
-  return {
-    id,
-    name: name || deriveName(email, phone),
-    phone: phone || '',
-    email: email || '',
-    role,
-  };
-}
-
-function deriveName(email, phone) {
-  if (email && email.includes('@')) {
-    return email.split('@')[0];
-  }
-  if (phone) return `User ${phone.slice(-4)}`;
-  return 'Sportzfy User';
-}
-
 export function AuthProvider({ children }) {
-  // null = guest (shows AuthStack). Object = signed in (shows role stack).
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Promise-based so screens can await + show spinners.
+  // Restore session on app launch
+  useEffect(() => {
+    async function restoreSession() {
+      try {
+        const savedUser = await api.getSavedUser();
+        const token = await api.getToken();
+
+        if (savedUser && token) {
+          // Normalize role to lowercase for local navigation stacks ('customer' | 'owner' | 'admin')
+          const normalizedRole = (savedUser.role || 'customer').toLowerCase();
+          setUser({ ...savedUser, role: normalizedRole });
+
+          // Background verification with backend
+          api.getMe()
+            .then((freshUser) => {
+              if (freshUser) {
+                const freshRole = (freshUser.role || 'customer').toLowerCase();
+                setUser({ ...freshUser, role: freshRole });
+                api.setSavedUser(freshUser);
+              }
+            })
+            .catch(() => {
+              // If network is offline, keep cached user session
+            });
+        }
+      } catch (e) {
+        console.warn('Error restoring session:', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    restoreSession();
+  }, []);
+
   async function login({ email, phone, password, role }) {
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 700));
-    const next = mockUserFor({ email, phone, role: role || 'customer' });
-    setUser(next);
-    setLoading(false);
-    return next;
+    try {
+      const loginEmail = email || (phone && phone.includes('@') ? phone : `${phone || 'player'}@sportzfy.com`);
+      const { user: remoteUser } = await api.login({
+        email: loginEmail,
+        password,
+        role,
+      });
+
+      const normalizedRole = (remoteUser.role || role || 'customer').toLowerCase();
+      const finalUser = { ...remoteUser, role: normalizedRole };
+      setUser(finalUser);
+      return finalUser;
+    } catch (err) {
+      console.error('Login failed:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function register({ name, phone, email, password, role }) {
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 900));
-    const next = mockUserFor({ name, phone, email, role });
-    setUser(next);
-    setLoading(false);
-    return next;
+    try {
+      const { user: remoteUser } = await api.register({
+        name,
+        email,
+        phone,
+        password,
+        role,
+      });
+
+      const normalizedRole = (remoteUser.role || role || 'customer').toLowerCase();
+      const finalUser = { ...remoteUser, role: normalizedRole };
+      setUser(finalUser);
+      return finalUser;
+    } catch (err) {
+      console.error('Registration failed:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function logout() {
-    setUser(null);
+  async function logout() {
+    setLoading(true);
+    try {
+      await api.logout();
+    } finally {
+      setUser(null);
+      setLoading(false);
+    }
   }
 
   const value = useMemo(

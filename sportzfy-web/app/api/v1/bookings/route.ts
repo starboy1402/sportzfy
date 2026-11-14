@@ -6,6 +6,59 @@ import QRCode from "qrcode";
 
 const ALLOWED_PAYMENT_METHODS = ["BKASH", "NAGAD", "ROCKET", "CARD"];
 
+export async function GET(_request: NextRequest) {
+  try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: { code: "UNAUTHORIZED", message: "Authentication required to view bookings." } },
+        { status: 401 }
+      );
+    }
+
+    const where = currentUser.role === "ADMIN" ? {} : { userId: currentUser.id };
+
+    const bookings = await prisma.booking.findMany({
+      where,
+      include: {
+        turf: {
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            city: true,
+            area: true,
+            address: true,
+            pitchFormats: true,
+            coverImage: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+
+    return NextResponse.json({
+      data: bookings,
+      count: bookings.length,
+    });
+  } catch (error) {
+    console.error("Error fetching bookings:", error);
+    return NextResponse.json(
+      { error: { code: "SERVER_ERROR", message: "Failed to fetch bookings." } },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
