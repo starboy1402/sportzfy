@@ -80,7 +80,7 @@ flowchart LR
 ```text
 .
 ├── sportzfy-web/       # Next.js web marketplace and API
-├── SPORTZFY-main/      # Expo / React Native mobile application
+├── sportzfy-app/       # Expo / React Native mobile application
 ├── ml/                 # Demand-pricing model and evaluation artifacts
 ├── docs/                # Product, architecture, UX, and testing documents
 ├── proposal/            # Research, requirements, and project materials
@@ -126,7 +126,7 @@ npm run build
 ### Mobile application
 
 ```bash
-cd SPORTZFY-main
+cd sportzfy-app
 npm install
 npm start
 ```
