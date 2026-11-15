@@ -75,7 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: SPORTZFY-main
+        working-directory: sportzfy-app
 
     steps:
       - name: 📥 Checkout Code
@@ -86,7 +86,7 @@ jobs:
         with:
           node-version: 20
           cache: "npm"
-          cache-dependency-path: SPORTZFY-main/package-lock.json
+          cache-dependency-path: sportzfy-app/package-lock.json
 
       - name: 📦 Install Mobile Dependencies
         run: npm ci
