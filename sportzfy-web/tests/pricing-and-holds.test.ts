@@ -4,10 +4,8 @@ import { calculateSlotPrice, calculateDynamicSlotPrice, getBangladeshDateTimePar
 
 test("TC-PRICE-01: Standard daytime slot computes base price without surcharge", () => {
   const basePrice = 2000;
-  // 4:00 PM slot (16:00)
-  const slotDate = new Date("2026-09-10T16:00:00.000Z");
-  // Set local hours to 16
-  slotDate.setHours(16, 0, 0, 0);
+  // 16:00 Bangladesh Time (10:00 UTC)
+  const slotDate = new Date("2026-09-10T10:00:00.000Z");
 
   const price = calculateSlotPrice(basePrice, slotDate);
   assert.strictEqual(price, 2000, "Daytime slot should equal base price");
@@ -16,19 +14,16 @@ test("TC-PRICE-01: Standard daytime slot computes base price without surcharge",
 test("TC-PRICE-02: Peak evening slot (8 PM - 11 PM) adds dynamic 150 BDT surcharge", () => {
   const basePrice = 2500;
 
-  // 8:00 PM (20:00)
-  const slot20 = new Date("2026-09-10T20:00:00.000Z");
-  slot20.setHours(20, 0, 0, 0);
+  // 20:00 Bangladesh Time (14:00 UTC)
+  const slot20 = new Date("2026-09-10T14:00:00.000Z");
   assert.strictEqual(calculateSlotPrice(basePrice, slot20), 2650, "8 PM must have +150 BDT surcharge");
 
-  // 9:00 PM (21:00)
-  const slot21 = new Date("2026-09-10T21:00:00.000Z");
-  slot21.setHours(21, 0, 0, 0);
+  // 21:00 Bangladesh Time (15:00 UTC)
+  const slot21 = new Date("2026-09-10T15:00:00.000Z");
   assert.strictEqual(calculateSlotPrice(basePrice, slot21), 2650, "9 PM must have +150 BDT surcharge");
 
-  // 10:00 PM (22:00)
-  const slot22 = new Date("2026-09-10T22:00:00.000Z");
-  slot22.setHours(22, 0, 0, 0);
+  // 22:00 Bangladesh Time (16:00 UTC)
+  const slot22 = new Date("2026-09-10T16:00:00.000Z");
   assert.strictEqual(calculateSlotPrice(basePrice, slot22), 2650, "10 PM must have +150 BDT surcharge");
 });
 
