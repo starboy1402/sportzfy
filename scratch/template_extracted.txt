@@ -1,0 +1,878 @@
+=== PAGE 1 ===
+Chittagong University of Engineering & Technology
+Course Code: CSE-356
+Software Engineering (Sessional)
+Title of the Project
+Team Members
+Team Member 1 Name
+ID: 2204001
+Team Member 2 Name
+ID: 2204002
+Team Member 3 Name
+ID: 2204003
+Supervised by
+Course Teacher 1, Designation
+Course Teacher 2, Designation
+November 8, 2026
+Department of Computer Science and Engineering (CSE)
+Chittagong University of Engineering & Technology (CUET)
+Chattogram-4349, Bangladesh
+
+=== PAGE 2 ===
+Team Members
+Photo Name ID Email Contact No. Total Credit
+Passed
+CGPA
+Obtained
+Team
+Member 1
+Name
+2204001 u2204001@student.
+cuet.ac.bd
+01700000001 101 3.51
+Team
+Member
+2 Name
+2204002 u2204002@student.
+cuet.ac.bd
+01700000002 102 3.52
+Team
+Member
+3 Name
+2204003 u2204003@student.
+cuet.ac.bd
+01700000003 103 3.53
+ii
+
+=== PAGE 3 ===
+Executive Summary
+GUIDE (delete before submission)
+Write this LAST, after all other chapters are complete. Length:one page (250–400
+words). Cover, in this order: (1) the problem, (2) your proposed solution and main features,
+(3) the process model and technologies used, (4) the AI component (if any), (5) key results
+from testing/deployment, and (6) the main conclusion/future work. Donotinclude citations,
+figures or tables here.
+[TODO: Write the executive summary here.]
+iii
+
+=== PAGE 4 ===
+Contents
+Executive Summary iii
+List of Figures vii
+List of Tables viii
+1 Introduction 1
+1.1 Goals and Objectives of the Project . . . . . . . . . . . . . . . . . . . . . 1
+1.2 Scope of the Work . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 1
+1.2.1 Current Situation and Context . . . . . . . . . . . . . . . . . . . 1
+1.2.2 Competing Products (Available in Market) . . . . . . . . . . . . . 1
+1.3 System Overview . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2
+1.4 Structure of the Document . . . . . . . . . . . . . . . . . . . . . . . . . . 2
+1.5 Terms, Acronyms, and Abbreviations Used . . . . . . . . . . . . . . . . . 3
+2 Project Management Plan 4
+2.1 Project Organization . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 4
+2.1.1 Individual Contribution to the Project . . . . . . . . . . . . . . . 4
+2.2 Process Model Used . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 4
+2.2.1 Rationale for Choosing Lifecycle Model . . . . . . . . . . . . . . . 5
+2.3 Risk Analysis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 5
+2.4 Constraints to Project Implementation . . . . . . . . . . . . . . . . . . . 5
+2.5 Tools/Languages Requirements . . . . . . . . . . . . . . . . . . . . . . . 5
+2.5.1 Hardware Requirements . . . . . . . . . . . . . . . . . . . . . . . 5
+2.5.2 Software Requirements . . . . . . . . . . . . . . . . . . . . . . . . 6
+2.6 Project Timeline and Schedule . . . . . . . . . . . . . . . . . . . . . . . . 6
+2.7 Estimated Budget . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 6
+2.8 Technological, Societal, & Environmental Impact of the Project . . . . . 7
+3 Requirement Specifications 8
+3.1 Stakeholders for the System . . . . . . . . . . . . . . . . . . . . . . . . . 8
+3.2 Use Case Diagram with Graphical and Textual Description . . . . . . . . 8
+3.3 Activity Diagram . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 9
+3.4 Static Model – Class Diagram . . . . . . . . . . . . . . . . . . . . . . . . 9
+3.5 Dynamic Model – Sequence Diagram . . . . . . . . . . . . . . . . . . . . 9
+3.6 Safety and Security Requirements . . . . . . . . . . . . . . . . . . . . . . 10
+iv
+
+=== PAGE 5 ===
+Project Report CSE-356
+3.6.1 Access Requirements . . . . . . . . . . . . . . . . . . . . . . . . . 10
+3.6.2 Integrity Requirements . . . . . . . . . . . . . . . . . . . . . . . . 10
+3.6.3 Privacy Requirements . . . . . . . . . . . . . . . . . . . . . . . . 11
+3.7 AI-integration Requirements . . . . . . . . . . . . . . . . . . . . . . . . . 11
+4 Architecture 12
+4.1 Architectural Model/Style Used . . . . . . . . . . . . . . . . . . . . . . . 12
+4.1.1 Rationale for Choosing the Architectural Model/Style . . . . . . . 12
+4.2 Architectural Design (High-Level Design) . . . . . . . . . . . . . . . . . . 12
+4.3 Technology, Software, and Hardware Used . . . . . . . . . . . . . . . . . 13
+4.4 AI-integration Architecture . . . . . . . . . . . . . . . . . . . . . . . . . . 13
+4.5 CI/CD Pipeline . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 13
+4.6 Git Management (Version Controlling) . . . . . . . . . . . . . . . . . . . 14
+5 Design 15
+5.1 High-Level Design (HLD) [Component Level Design] . . . . . . . . . . . 15
+5.2 Low-Level Design (LLD) . . . . . . . . . . . . . . . . . . . . . . . . . . . 15
+5.3 Database Schema (ER Diagram & Schema) . . . . . . . . . . . . . . . . . 16
+5.4 GUI (Graphical User Interface) Design . . . . . . . . . . . . . . . . . . . 16
+5.5 API Documentation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
+5.6 AI Model Design & Integration . . . . . . . . . . . . . . . . . . . . . . . 17
+5.7 Test Plan . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
+5.7.1 Test Strategy and Approaches . . . . . . . . . . . . . . . . . . . . 17
+5.7.2 Test Case Design/Preparation (High-Level or Sample Test Cases) 18
+6 Implementation / Construction 19
+6.1 Development Environment and Tools . . . . . . . . . . . . . . . . . . . . 19
+6.2 Key Implementation Details / Modules Developed . . . . . . . . . . . . . 19
+6.3 AI-integration Implementation . . . . . . . . . . . . . . . . . . . . . . . . 19
+6.4 Code Structure and Standards Followed . . . . . . . . . . . . . . . . . . 20
+7 Testing and Quality Assurance 21
+7.1 Requirements/Specifications-Based System Level Test (Detailed with Test
+Results) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 21
+7.2 Traceability of Test Cases to Use Cases . . . . . . . . . . . . . . . . . . . 22
+7.3 Techniques Used for Test Generation . . . . . . . . . . . . . . . . . . . . 22
+7.4 Unit Testing, Integration Testing . . . . . . . . . . . . . . . . . . . . . . 22
+7.5 System Testing (UAT, PT, VT) . . . . . . . . . . . . . . . . . . . . . . . 22
+7.6 Security Testing (VAPT) . . . . . . . . . . . . . . . . . . . . . . . . . . . 23
+7.7 AI-specific Testing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23
+v
+
+=== PAGE 6 ===
+Project Report CSE-356
+7.8 Assessment of the Goodness of the Test Suite . . . . . . . . . . . . . . . 23
+8 Deployment and Go-Live 24
+8.1 Deployment Environment . . . . . . . . . . . . . . . . . . . . . . . . . . 24
+8.2 Deployment Process and CI/CD Implementation . . . . . . . . . . . . . . 24
+8.3 Go-Live Strategy and Post-Deployment Monitoring . . . . . . . . . . . . 24
+9 Sustainability Plan & Ethical Considerations 25
+9.1 Scalability . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 25
+9.2 Flexibility / Customization . . . . . . . . . . . . . . . . . . . . . . . . . . 25
+9.3 Maintainability and Future Enhancements . . . . . . . . . . . . . . . . . 25
+9.4 Ethical Considerations . . . . . . . . . . . . . . . . . . . . . . . . . . . . 25
+Acknowledgement 26
+References 27
+A Full Source Code Snapshots & Repository Link 28
+B Complete Test Cases (Detailed Tables) 29
+C Sample Screenshots of the Working System 30
+D Meeting Minutes / Progress Logs 31
+E Additional Diagrams 32
+F AI Model Documentation / Training Details 33
+vi
+
+=== PAGE 7 ===
+List of Figures
+1.1 System overview . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2
+2.1 Project timeline (Gantt chart) . . . . . . . . . . . . . . . . . . . . . . . . 6
+3.1 Use case diagram . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 8
+3.2 Activity diagram of[TODO: process]. . . . . . . . . . . . . . . . . . . 9
+3.3 Class diagram . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 10
+3.4 Sequence diagram of[TODO: scenario]. . . . . . . . . . . . . . . . . . 10
+4.1 High-level system architecture . . . . . . . . . . . . . . . . . . . . . . . . 12
+4.2 AI-integration architecture . . . . . . . . . . . . . . . . . . . . . . . . . . 13
+5.1 Component diagram . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15
+5.2 Entity–Relationship diagram . . . . . . . . . . . . . . . . . . . . . . . . . 16
+5.3 Wireframe of the main screen . . . . . . . . . . . . . . . . . . . . . . . . 16
+C.1 Home screen . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 30
+E.1 Deployment diagram . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 32
+vii
+
+=== PAGE 8 ===
+List of Tables
+1.1 Comparison with existing products . . . . . . . . . . . . . . . . . . . . . 2
+1.2 Terms, acronyms and abbreviations . . . . . . . . . . . . . . . . . . . . . 3
+2.1 Individual contribution to the project . . . . . . . . . . . . . . . . . . . . 4
+2.2 Risk analysis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 5
+2.3 Estimated budget . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 7
+3.1 Stakeholders . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 8
+3.2 Textual description of use case UC-01 . . . . . . . . . . . . . . . . . . . . 9
+3.3 AI-integration requirements . . . . . . . . . . . . . . . . . . . . . . . . . 11
+4.1 Technology stack and justification . . . . . . . . . . . . . . . . . . . . . . 13
+5.1 Schema of tableusers. . . . . . . . . . . . . . . . . . . . . . . . . . . . 16
+5.2 API summary . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
+7.1 Requirements/specifications-based requirement list . . . . . . . . . . . . 21
+7.2 System level test cases – module:[TODO: Upload]. . . . . . . . . . . 21
+7.3 Traceability matrix . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22
+7.4 VAPT findings . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23
+B.1 Complete test cases . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 29
+D.1 Meeting log . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 31
+viii
+
+=== PAGE 9 ===
+Chapter 1
+Introduction
+1.1 Goals and Objectives of the Project
+GUIDE (delete before submission)
+List the maingoal(some sentences) and 5-8specific, measurableobjectives (SMART).
+Example: “Reduce manual attendance recording time from 10 min to under 1 min per class.”
+[TODO: Write goals and objectives.]
+1.[TODO: Objective 1 (measurable)]
+2.[TODO: Objective 2 (measurable)]
+1.2 Scope of the Work
+GUIDE (delete before submission)
+State clearly what the systemwilldo (in scope) and what itwill notdo (out of scope).
+1.2.1 Current Situation and Context
+GUIDE (delete before submission)
+Describe the existing problem or manual system and why a new system is needed. Use facts,
+statistics or interviews/surveys with citations.
+[TODO: Describe the current situation.]
+1.2.2 Competing Products (Available in Market)
+GUIDE (delete before submission)
+Compare 3–5 existing products. Summarise features andlimitationsin a table, then explain
+how your system differs.
+1
+
+=== PAGE 10 ===
+Project Report CSE-356
+Table 1.1:Comparison with existing products
+Product Key Features Limitations Our Advantage
+Product A[TODO: ...] [TODO: ...] [TODO: ...]
+Product B[TODO: ...] [TODO: ...] [TODO: ...]
+1.3 System Overview
+GUIDE (delete before submission)
+High-level description: what the system does, main features, target users, and (if applicable)
+the AI capability. You can include one overview figure.
+[TODO: Write system overview.]
+[Figure placeholder:system_overview.png]
+Figure 1.1:System overview
+1.4 Structure of the Document
+GUIDE (delete before submission)
+One or two sentences per chapter describing its contents. Update after finishing the report.
+The remainder of this report is organised as follows. Chapter 2 presents the project
+management plan. Chapter 3 specifies the requirements. Chapter 4 describes the archi-
+tecture. Chapter 5 details the design. Chapter 6 explains the implementation. Chapter 7
+reports testing and quality assurance. Chapter 8 covers deployment and go-live, and
+Chapter 9 presents the sustainability plan.
+2
+
+=== PAGE 11 ===
+Project Report CSE-356
+1.5 Terms, Acronyms, and Abbreviations Used
+GUIDE (delete before submission)
+Define every technical term, acronym and abbreviation used in the report (alphabetical
+order).
+Table 1.2:Terms, acronyms and abbreviations
+Term Definition
+API Application Programming Interface
+CI/CD Continuous Integration / Continuous Deployment
+ER Entity–Relationship
+UAT User Acceptance Testing
+VAPT Vulnerability Assessment and Penetration Testing
+3
+
+=== PAGE 12 ===
+Chapter 2
+Project Management Plan
+2.1 Project Organization
+GUIDE (delete before submission)
+Describe the team structure (roles such as project manager, analyst, developer, tester) and
+communication channels / meeting frequency.
+[TODO: Describe the team organisation.]
+2.1.1 Individual Contribution to the Project
+GUIDE (delete before submission)
+Detail what EACH member contributed. Use the tick table and add 2–3 sentences per
+member. Add rows for more members.
+Individual contributions are shown in Table 2.1.
+Table 2.1:Individual contribution to the project
+Member Req.
+Spec. Planning Design Model
+Building
+User
+Interface T esting Deployment Docs
+Team Member 1 Name ✓
+Team Member 2 Name ✓
+Team Member 3 Name ✓
+2.2 Process Model Used
+GUIDE (delete before submission)
+Name the lifecycle model (Waterfall, Incremental, Scrum/Agile, Spiral, Prototyping...) and
+show a diagram of how you applied it (sprints, iterations, deliverables).
+[TODO: Describe the process model.]Example citation: [1, 2].
+4
+
+=== PAGE 13 ===
+Project Report CSE-356
+2.2.1 Rationale for Choosing Lifecycle Model
+GUIDE (delete before submission)
+Justify the choice using project size, requirement stability, team size, risk, and customer
+involvement. Mention why alternatives were rejected.
+[TODO: Justify the lifecycle model.]
+2.3 Risk Analysis
+GUIDE (delete before submission)
+Identify risks (technical, schedule, resource, AI/data-related, security) with probability, im-
+pact, and mitigation. You can use the risk-exposure = probability×impact approach.
+Table 2.2:Risk analysis
+ID Risk Prob. Impact Mitigation
+R1 Team member unavailable Med High Cross-training; shared task
+board
+R2 Insufficient / biased training
+data (AI)
+High High Data augmentation; bias audit
+R3[TODO: ...]
+2.4 Constraints to Project Implementation
+GUIDE (delete before submission)
+Mention schedule, budget, software, hardware, data, legal and skill constraints.
+[TODO: List constraints.]
+2.5 Tools/Languages Requirements
+2.5.1 Hardware Requirements
+GUIDE (delete before submission)
+Development and deployment hardware (CPU/GPU, RAM, storage, devices). Table recom-
+mended.
+[TODO: List hardware requirements.]
+5
+
+=== PAGE 14 ===
+Project Report CSE-356
+2.5.2 Software Requirements
+GUIDE (delete before submission)
+IDEs, languages, frameworks, libraries (with versions), databases, De-
+vOps/design/collaboration tools.
+[TODO: List software requirements.]
+2.6 Project Timeline and Schedule
+GUIDE (delete before submission)
+Provide a Gantt chart with phases and milestones. Edit the example below (package
+pgfgantt).
+Week
+1 2 3 4 5 6 7 8 9 10 11 12 13 14
+Requirements
+Design
+Implementation
+Testing
+Deployment
+Final submission
+Figure 2.1:Project timeline (Gantt chart)
+2.7 Estimated Budget
+GUIDE (delete before submission)
+Break down estimated costs (hosting, domain, cloud/GPU, tools, devices, API usage, human
+effort). Give totals in BDT (and USD if relevant).
+6
+
+=== PAGE 15 ===
+Project Report CSE-356
+Table 2.3:Estimated budget
+Item Unit Qty Cost (BDT)
+Cloud hosting month 6[TODO: ...]
+Domain name year 1[TODO: ...]
+Total [TODO: ...]
+2.8 Technological, Societal, & Environmental
+Impact of the Project
+GUIDE (delete before submission)
+Discuss positive AND negative impacts on individuals, society, culture, economy and the en-
+vironment (e.g. energy use of AI training/hosting, e-waste, accessibility, job impact, ethics).
+[TODO: Discuss impacts.]
+7
+
+=== PAGE 16 ===
+Chapter 3
+Requirement Specifications
+3.1 Stakeholders for the System
+GUIDE (delete before submission)
+List all stakeholders (users, admins, client, developers, regulators...) with their role and
+interest/influence.
+Table 3.1:Stakeholders
+Stakeholder Role Interest in the system
+End user[TODO: ...] [TODO: ...]
+Administrator[TODO: ...] [TODO: ...]
+3.2 Use Case Diagram with Graphical and Textual
+Description
+GUIDE (delete before submission)
+Give the use case diagram (UML) and, foreachuse case, a textual description table: ID,
+name, actors, preconditions, postconditions, main flow (steps), alternative/exception flows.
+Tools: draw.io, StarUML, PlantUML, Lucidchart.
+[Figure placeholder:usecase_diagram.png]
+Figure 3.1:Use case diagram
+8
+
+=== PAGE 17 ===
+Project Report CSE-356
+Table 3.2:Textual description of use case UC-01
+Use Case IDUC-01
+Name [TODO: e.g. Upload Image]
+Actor(s) [TODO: Primary / secondary actors]
+Precondition [TODO: ...]
+Postcondition [TODO: ...]
+Main flow1.[TODO: ...]2.[TODO: ...]3.[TODO: ...]
+Alternative flow [TODO: ...]
+Exception flow [TODO: ...]
+3.3 Activity Diagram
+GUIDE (delete before submission)
+Show the workflow of major processes (swimlanes recommended). One diagram per major
+use case/process.
+[Figure placeholder:activity_diagram.png]
+Figure 3.2:Activity diagram of[TODO: process]
+3.4 Static Model – Class Diagram
+GUIDE (delete before submission)
+Show classes, attributes, methods, visibility and relationships (association, aggregation, com-
+position, inheritance) with multiplicities.
+3.5 Dynamic Model – Sequence Diagram
+GUIDE (delete before submission)
+Show object interactions for the key scenarios (one diagram per important use case). Include
+actor, UI, controller, services, DB and AI/external API lifelines.
+9
+
+=== PAGE 18 ===
+Project Report CSE-356
+[Figure placeholder:class_diagram.png]
+Figure 3.3:Class diagram
+[Figure placeholder:sequence_diagram.png]
+Figure 3.4:Sequence diagram of[TODO: scenario]
+3.6 Safety and Security Requirements
+3.6.1 Access Requirements
+GUIDE (delete before submission)
+Who has authorised access to functionality and data, under what circumstances, and to
+which parts. Include authentication, authorisation, roles (RBAC table).
+[TODO: Write access requirements.]See also [3].
+3.6.2 Integrity Requirements
+GUIDE (delete before submission)
+Required integrity of databases, files and the product itself: data accuracy, validation, con-
+sistency, backups, audit logs, transaction handling.
+[TODO: Write integrity requirements.]
+10
+
+=== PAGE 19 ===
+Project Report CSE-356
+3.6.3 Privacy Requirements
+GUIDE (delete before submission)
+What the product must do to protect personal data and comply with privacy laws (e.g.
+Bangladesh Data Protection Act / GDPR where applicable): consent, minimisation, encryp-
+tion, retention, anonymisation.
+[TODO: Write privacy requirements.]
+3.7 AI-integration Requirements
+GUIDE (delete before submission)
+Specify requirements for the AI component: functional (inputs/outputs, tasks), data
+(sources, quality, labelling), performance (accuracy, precision/recall, latency), ethical (fair-
+ness, transparency, explainability, human oversight), robustness, and monitoring/retraining.
+If your project has no AI part, write a short justification and (with your teacher’s approval)
+mark this section “Not applicable”.
+Table 3.3:AI-integration requirements
+ID Requirement Must/Want Metric
+R-AI-01 Model shall classify input with accuracy≥
+[TODO: X]%
+Must Accuracy
+R-AI-02 Inference latency shall be below[TODO: X]s Want Latency
+11
+
+=== PAGE 20 ===
+Chapter 4
+Architecture
+4.1 Architectural Model/Style Used
+GUIDE (delete before submission)
+Name the style (Layered, MVC, Client–Server, Microservices, Event-driven, Pipe-and-
+filter...).
+[TODO: Describe the architectural style.]
+4.1.1 Rationale for Choosing the Architectural Model/Style
+GUIDE (delete before submission)
+Explain why the style fits your quality attributes (scalability, maintainability, performance,
+security) and why alternatives were not chosen.
+[TODO: Justify the architectural style.]
+4.2 Architectural Design (High-Level Design)
+GUIDE (delete before submission)
+Overall architecture diagram: layers, components, external systems and their interactions,
+with a short description of every component.
+[Figure placeholder:architecture_diagram.png]
+Figure 4.1:High-level system architecture
+12
+
+=== PAGE 21 ===
+Project Report CSE-356
+4.3 Technology, Software, and Hardware Used
+GUIDE (delete before submission)
+Detailed tech-stack table WITH justification for each choice.
+Table 4.1:Technology stack and justification
+Layer Technology Justification
+Frontend[TODO: React / Flutter...] [TODO: ...]
+Backend[TODO: Django / Node.js...] [TODO: ...]
+Database[TODO: PostgreSQL...] [TODO: ...]
+AI/ML[TODO: PyTorch / TensorFlow...] [TODO: ...]
+Hosting[TODO: AWS / Render...] [TODO: ...]
+4.4 AI-integration Architecture
+GUIDE (delete before submission)
+ShowhowtheAImodelisintegrated: datapipeline, trainingpipeline, modelregistry/storage,
+inference service (REST/gRPC/embedded), API calls to external LLMs, monitoring, and
+fallback behaviour.
+[Figure placeholder:ai_architecture.png]
+Figure 4.2:AI-integration architecture
+4.5 CI/CD Pipeline
+GUIDE (delete before submission)
+Describe your CI/CD tools (GitHub Actions, GitLab CI, Jenkins...) and pipeline stages:
+lint→build→unit test→integration test→security scan→package→deploy. Include
+a pipeline diagram and a snippet of the workflow file.
+13
+
+=== PAGE 22 ===
+Project Report CSE-356
+1name : CI
+2on : [ push , p u l l _ r e q u e s t ]
+3jobs:
+4build -test:
+5runs - on : ubuntu - latest
+6steps :
+7- uses : actions / c h e c k o u t @ v 4
+8- uses : actions / setup - py th on @v 5
+9with : { python - version : " 3.11 " }
+10- run : pip install -r r e q u i r e m e n t s . txt
+11- run : pytest -- cov = app
+Listing 4.1:Example GitHub Actions workflow (.github/workflows/ci.yml)
+4.6 Git Management (Version Controlling)
+GUIDE (delete before submission)
+Branching strategy (e.g. Git Flow / trunk-based), branch naming, commit message conven-
+tion, pull-request and code-review rules, protected branches, tagging/releases, and a screen-
+shot of the commit graph/contribution statistics. Give the repository URL.
+[TODO: Describe the Git workflow.]
+14
+
+=== PAGE 23 ===
+Chapter 5
+Design
+5.1 High-Level Design (HLD) [Component Level
+Design]
+GUIDE (delete before submission)
+Major components, their responsibilities and interfaces; design patterns used (Factory, Ob-
+server, Singleton, Strategy, Repository...) with the reason and a small UML snippet for
+each.
+[Figure placeholder:component_diagram.png]
+Figure 5.1:Component diagram
+5.2 Low-Level Design (LLD)
+GUIDE (delete before submission)
+Detailed design of individual modules: algorithms, data structures, pseudocode, state dia-
+grams.
+Algorithm 1Example: input validation algorithm
+Require:uploaded filef
+Ensure:V alidorInvalid
+1:ifextension(f)/∈{jpg, png}then
+2:returnInvalid
+3:end if
+4:returnV alid
+15
+
+=== PAGE 24 ===
+Project Report CSE-356
+5.3 Database Schema (ER Diagram & Schema)
+GUIDE (delete before submission)
+ER diagram, table structures (with data types), primary/foreign keys, relationships, indexes
+and normalisation (show up to 3NF/BCNF).
+[Figure placeholder:er_diagram.png]
+Figure 5.2:Entity–Relationship diagram
+Table 5.1:Schema of tableusers
+Column Type Key Description
+id INT PK Unique user id
+email VARCHAR(100) UNIQUE Login e-mail
+5.4 GUI (Graphical User Interface) Design
+GUIDE (delete before submission)
+Wireframes (Figma, Balsamiq), mockups and final screens with explanations of navigation
+and usability decisions.
+[Figure placeholder:gui_wireframe.png]
+Figure 5.3:Wireframe of the main screen
+16
+
+=== PAGE 25 ===
+Project Report CSE-356
+5.5 API Documentation
+GUIDE (delete before submission)
+List ALL APIs: endpoint, method, parameters, request/response examples, status codes,
+authentication. Export from Swagger/OpenAPI or Postman if possible.
+Table 5.2:API summary
+Method Endpoint Description Auth
+POST/api/v1/loginUser login No
+GET/api/v1/itemsList items Bearer token
+1POST / api / v1 / login
+2{ " email " : " u s e r @ e x a m p l e . com " , " password " : " ******** " }
+3
+4200 OK
+5{ " token " : " e y J h b G c i O i ... " , " e x p i r e s _ i n " : 3600 }
+Listing 5.1:Sample request/response (JSON)
+5.6 AI Model Design & Integration
+GUIDE (delete before submission)
+Model choice and justification, dataset (source, size, split, pre-processing),
+architecture/hyper-parameters, training setup, evaluation metrics and results, how
+the model is exposed to the application (API/embedded), prompt design for LLMs, and
+handling of failures/uncertainty.
+[TODO: Describe the AI model design.]
+5.7 Test Plan
+5.7.1 Test Strategy and Approaches
+GUIDE (delete before submission)
+Levels of testing (unit, integration, system, acceptance), test types (functional, performance,
+security, AI-specific), tools, environments, entry/exit criteria, roles and schedule.
+[TODO: Describe the test strategy.]
+17
+
+=== PAGE 26 ===
+Project Report CSE-356
+5.7.2 TestCaseDesign/Preparation(High-LevelorSampleTest
+Cases)
+GUIDE (delete before submission)
+Give sample/high-level test cases here. Full detailed cases go to Chapter 7 and Appendix B.
+[TODO: Provide sample test cases.]
+18
+
+=== PAGE 27 ===
+Chapter 6
+Implementation / Construction
+6.1 Development Environment and Tools
+GUIDE (delete before submission)
+IDE, version control, local setup, server/cloud setup, containers (Docker), package managers.
+[TODO: Describe the development environment.]
+6.2 Key Implementation Details / Modules
+Developed
+GUIDE (delete before submission)
+For each important module: purpose, how it was implemented, and a SHORT annotated
+code excerpt (10–25 lines). Put full code in Appendix A / the repository.
+1ALLOWED = { " . jpg " , " . jpeg " , " . png " }
+2
+3defi s _ v a l i d _ i m a g e ( filename :str) ->bool:
+4" " " Return True only for su pp or te d image e x t e n s i o n s . " " "
+5ext = filename [ filename . rfind ( " . " ) :]. lower ()
+6returnextinALLOWED
+Listing 6.1:Example: image-extension validation
+Listing 6.1 shows[TODO: explain the code].
+6.3 AI-integration Implementation
+GUIDE (delete before submission)
+How the AI model was implemented and wired into the system: data pre-processing code,
+training/fine-tuning scripts, model loading, inference endpoint, prompt templates, caching,
+error handling, and cost/latency considerations.
+[TODO: Describe the AI implementation.]
+19
+
+=== PAGE 28 ===
+Project Report CSE-356
+6.4 Code Structure and Standards Followed
+GUIDE (delete before submission)
+Folder structure, naming conventions, coding standards (PEP8, ESLint, Google Style...),
+linting/formatting tools, documentation/comments policy, code-review checklist.
+1project /
+2| - - backend / ( APIs , services , models )
+3| - - frontend / ( UI c o m p o n e n t s )
+4| - - ml / ( datasets , notebooks , training scripts )
+5| - - tests / ( unit & i n t e g r a t i o n tests )
+6| - - docs /
+7‘-- . github / wo rk fl ow s /
+Listing 6.2:Project folder structure
+20
+
+=== PAGE 29 ===
+Chapter 7
+Testing and Quality Assurance
+7.1 Requirements/Specifications-Based System
+Level Test (Detailed with Test Results)
+GUIDE (delete before submission)
+First list the requirements (ID, statement, Must/Want), then give one test-case table per
+module, with ACTUAL results and Pass/Fail status. Copy the module table block for each
+module.
+Table 7.1:Requirements/specifications-based requirement list
+Requirement ID Requirement Statement Must/Want Comment
+R-Up-01 User can’t upload image with invalid
+extension
+Must N/A
+R-Up-02 Show error message if user uploads im-
+age with invalid extension
+Want N/A
+R-Gen-01 User can’t generate caption without
+uploading image
+Must N/A
+Table 7.2:System level test cases – module:[TODO: Upload]
+Project NameTitle of the ProjectModule Name [TODO: Upload]
+Created By [TODO: Name] Reviewed By [TODO: Name]
+Date of Creation [TODO: dd-mm-yy] Date of Review [TODO: dd-mm-yy]
+TC ID Scenario Steps Test Data Expected Actual Status
+TC-UP-01 Upload with
+invalid
+extension
+1. Open UI
+2. Choose
+file 3.
+Upload
+new.pdf Return to
+initial state
+Returned to
+initial state
+Passed
+TC-UP-02[TODO:
+...]
+[TODO:
+...]
+[TODO: ...] [TODO:
+...]
+[TODO:
+...]
+[TODO: ...]
+21
+
+=== PAGE 30 ===
+Project Report CSE-356
+7.2 Traceability of Test Cases to Use Cases
+GUIDE (delete before submission)
+Traceability matrix: test cases vs. requirements / use cases. Every requirement must be
+covered by at least one test case.
+Table 7.3:Traceability matrix
+Test Case R-Up-01 R-Up-02 R-Gen-01 UC-01 UC-02
+TC-UP-01 ✓ ✓
+TC-UP-02 ✓ ✓
+TC-GEN-01 ✓ ✓
+7.3 Techniques Used for Test Generation
+GUIDE (delete before submission)
+Black-box (equivalence partitioning, boundary value analysis, decision table, state transi-
+tion), white-box (statement/branch/path coverage), experience-based, and AI-assisted/ au-
+tomated generation. Say where each was applied.
+[TODO: Describe test generation techniques.]
+7.4 Unit Testing, Integration Testing
+GUIDE (delete before submission)
+Tools (pytest, JUnit, Jest...), number of tests, coverage report, results, and a screenshot of
+the test run.
+[TODO: Report unit and integration testing.]
+7.5 System Testing (UAT, PT, VT)
+GUIDE (delete before submission)
+UAT: users, tasks, feedback/SUS score.Performance Testing: tool (JMeter, Locust),
+response time, throughput.Volume Testing: behaviour with large data. Present results
+in tables/graphs.
+[TODO: Report UAT, performance and volume tests.]
+22
+
+=== PAGE 31 ===
+Project Report CSE-356
+7.6 Security Testing (VAPT)
+GUIDE (delete before submission)
+Vulnerability assessment and penetration test findings (OWASP Top 10: SQL injection,
+XSS, broken authentication...). Tools: OWASP ZAP, Burp Suite, Nmap. Report findings,
+severity, and fixes.
+Table 7.4:VAPT findings
+ID Vulnerability Severity Fix / Status
+V-01[TODO: ...] [TODO: High/Med/Low] [TODO: ...]
+7.7 AI-specific Testing
+GUIDE (delete before submission)
+Model evaluation (accuracy, precision, recall, F1, BLEU/ROUGE...), confusion matrix,
+robustness/adversarial inputs, bias & fairness checks, hallucination checks for LLMs, drift
+monitoring, explainability checks, edge cases.
+[TODO: Report AI-specific testing.]
+7.8 Assessment of the Goodness of the Test Suite
+GUIDE (delete before submission)
+Coverage (statement/branch/requirement), effectiveness (defects found, mutation score),
+and limitations of your test suite.
+[TODO: Assess the test suite.]
+23
+
+=== PAGE 32 ===
+Chapter 8
+Deployment and Go-Live
+8.1 Deployment Environment
+GUIDE (delete before submission)
+Server/cloud platform, OS, configuration, containers, domain/SSL, environment variables
+(never print secrets!). Include a deployment diagram.
+[TODO: Describe the deployment environment.]
+8.2 Deployment Process and CI/CD
+Implementation
+GUIDE (delete before submission)
+Step-by-step deployment process and how the pipeline of Section 4.5 was implemented (show
+real workflow output/screenshots).
+1.[TODO: Step 1]
+2.[TODO: Step 2]
+8.3 Go-Live Strategy and Post-Deployment
+Monitoring
+GUIDE (delete before submission)
+Rollout plan (big-bang, phased, canary, blue–green), user training, support/helpdesk, moni-
+toring tools (logs, uptime, error tracking, AI-model drift), rollback plan.
+[TODO: Describe go-live and monitoring.]
+24
+
+=== PAGE 33 ===
+Chapter 9
+Sustainability Plan & Ethical Consid-
+erations
+9.1 Scalability
+GUIDE (delete before submission)
+How the system handles growth in users/data: horizontal/vertical scaling, caching, load
+balancing, DB sharding, queueing, scaling of AI inference.
+[TODO: Describe scalability.]
+9.2 Flexibility / Customization
+GUIDE (delete before submission)
+Features that allow future modification: configuration files, plug-in architecture, modular
+design, theming, multilingual support.
+[TODO: Describe flexibility and customisation.]
+9.3 Maintainability and Future Enhancements
+GUIDE (delete before submission)
+Maintenance plan (bug fixing, updates, dependency upgrades, model retraining, documenta-
+tion) and a list of proposed future features.
+[TODO: Describe maintainability and future work.]
+9.4 Ethical Considerations
+GUIDE (delete before submission)
+Ethical considerations maintained during the system development from the very beginning
+to the end go here.
+[TODO: Describe ethical considerations.]
+25
+
+=== PAGE 34 ===
+Acknowledgement
+GUIDE (delete before submission)
+Thank course teachers, supervisors, mentors, organisations, or users who helped (about 1
+paragraph).
+[TODO: Write acknowledgement.]
+26
+
+=== PAGE 35 ===
+Bibliography
+[1] R. S. Pressman and B. R. Maxim,Software Engineering: A Practitioner’s Approach.
+McGraw-Hill, 9th ed., 2019.
+[2] I. Sommerville,Software Engineering. Pearson, 10th ed., 2016.
+[3] OWASP Foundation, “Owasp top 10: 2021,” 2021.
+27
+
+=== PAGE 36 ===
+Appendix A
+Full Source Code Snapshots & Repos-
+itory Link
+GUIDE (delete before submission)
+Give the repository URL, commit hash / release tag submitted, and key source files. Use
+\lstinputlistingto include real files (keep it to the important ones).
+Repository:[TODO:pasteGitHub/GitLabURLhere]Commit/tag:[TODO:
+hash]
+28
+
+=== PAGE 37 ===
+Appendix B
+CompleteTestCases(DetailedTables)
+GUIDE (delete before submission)
+Place ALL test cases here (one longtable per module). Chapter 7 holds only the sum-
+mary/sample.
+Table B.1:Complete test cases
+ID Scenario Steps Data Expected Actual Status
+TC-01 [TODO: ...] [TODO: ...] [TODO:
+...]
+[TODO:
+...]
+[TODO:
+...]
+[TODO:
+...]
+29
+
+=== PAGE 38 ===
+Appendix C
+Sample Screenshots of the Working
+System
+GUIDE (delete before submission)
+Screenshots of the final running system with one-line captions (put files inimages/).
+[Figure placeholder:screenshot_home.png]
+Figure C.1:Home screen
+30
+
+=== PAGE 39 ===
+Appendix D
+Meeting Minutes / Progress Logs
+GUIDE (delete before submission)
+Record date, attendees, agenda, decisions and action items for each meeting (at least one
+per week).
+Table D.1:Meeting log
+Date Attendees Decisions Action items
+[TODO: dd-mm-yy]All[TODO: ...] [TODO: ...]
+31
+
+=== PAGE 40 ===
+Appendix E
+Additional Diagrams
+GUIDE (delete before submission)
+Deployment diagram, component diagram, state diagrams, and any other diagrams that did
+not fit in the main chapters.
+[Figure placeholder:deployment_diagram.png]
+Figure E.1:Deployment diagram
+32
+
+=== PAGE 41 ===
+Appendix F
+AI Model Documentation / Training
+Details
+GUIDE (delete before submission)
+(If applicable) Model card: intended use, dataset description, training hyper-parameters,
+hardware, training curves, evaluation, limitations, ethical considerations.
+[TODO: Add model documentation or write “Not applicable”.]
+33
+
