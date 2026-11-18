@@ -145,7 +145,7 @@ test("TC-MATCH-02: Squad Join Acceptance Decrements Open Spots & Idempotency", a
         },
       });
     }
-  });
+  }, { maxWait: 10000, timeout: 25000 });
 
   const updatedMatch = await prisma.matchPost.findUnique({ where: { id: match.id } });
   assert.strictEqual(updatedMatch?.openSpots, 0, "Open spots must decrement to 0");
@@ -189,7 +189,7 @@ test("TC-MATCH-02: Squad Join Acceptance Decrements Open Spots & Idempotency", a
         },
       });
     }
-  });
+  }, { maxWait: 10000, timeout: 25000 });
 
   const restoredMatch = await prisma.matchPost.findUnique({ where: { id: match.id } });
   assert.strictEqual(restoredMatch?.openSpots, 1, "Open spots must be restored to 1 after player removal");

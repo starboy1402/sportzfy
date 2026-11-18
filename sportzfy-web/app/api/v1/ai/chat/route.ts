@@ -73,13 +73,13 @@ async function analyzeWithGroq(
     ];
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey} `,
+        Authorization: `Bearer ${apiKey.trim()}`,
       },
       signal: controller.signal,
       body: JSON.stringify({
@@ -109,6 +109,134 @@ async function analyzeWithGroq(
 }
 
 /**
+ * 🌐 OpenRouter Free Tier Engine (~1-2s latency, high reliability)
+ */
+async function analyzeWithOpenRouter(
+  userQuery: string,
+  history: Array<{ role: string; content: string }>,
+  apiKey: string,
+): Promise<AiAnalysis | null> {
+  const freeModels = [
+    "nvidia/nemotron-3-ultra-550b-a55b:free",
+    "dots-studio/dots-3-note-preview:free",
+    "meta-llama/llama-3.2-3b-instruct:free",
+    "inclusionai/ling-3.2-flash:free",
+  ];
+
+  const messages = [
+    { role: "system", content: SYSTEM_INSTRUCTION },
+    ...history.slice(-3).map((m) => ({
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: m.content,
+    })),
+    { role: "user", content: userQuery },
+  ];
+
+  for (const model of freeModels) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey.trim()}`,
+          "HTTP-Referer": "https://sportzfy-zeta.vercel.app",
+          "X-Title": "Sportzfy",
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model,
+          messages,
+          response_format: { type: "json_object" },
+          temperature: 0.2,
+          max_tokens: 600,
+        }),
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        console.warn(`OpenRouter (${model}) returned non-200:`, res.status);
+        continue;
+      }
+
+      const data = await res.json();
+      const content = data.choices?.[0]?.message?.content;
+      if (!content) continue;
+
+      return JSON.parse(content) as AiAnalysis;
+    } catch (err) {
+      console.warn(`OpenRouter (${model}) failed, trying next:`, err);
+    }
+  }
+  return null;
+}
+
+/**
+ * 🤗 Hugging Face Router Engine
+ */
+async function analyzeWithHuggingFace(
+  userQuery: string,
+  history: Array<{ role: string; content: string }>,
+  apiKey: string,
+): Promise<AiAnalysis | null> {
+  const models = [
+    "Qwen/Qwen3.8-27B",
+    "meta-llama/Llama-3.1-8B-Instruct",
+    "Qwen/Qwen3.5-9B",
+  ];
+
+  const messages = [
+    { role: "system", content: SYSTEM_INSTRUCTION },
+    ...history.slice(-3).map((m) => ({
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: m.content,
+    })),
+    { role: "user", content: userQuery },
+  ];
+
+  for (const model of models) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+      const res = await fetch("https://router.huggingface.co/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey.trim()}`,
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature: 0.2,
+          max_tokens: 600,
+        }),
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) continue;
+
+      const data = await res.json();
+      const content = data.choices?.[0]?.message?.content;
+      if (!content) continue;
+
+      // Extract JSON if model wrapped in markdown
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]) as AiAnalysis;
+      }
+      return JSON.parse(content) as AiAnalysis;
+    } catch (err) {
+      console.warn(`Hugging Face (${model}) call bypassed:`, err);
+    }
+  }
+  return null;
+}
+
+/**
  * 🧠 Google Gemini Engine (~1.5s fallback)
  */
 async function analyzeWithGemini(
@@ -116,62 +244,66 @@ async function analyzeWithGemini(
   history: Array<{ role: string; content: string }>,
   apiKey: string,
 ): Promise<AiAnalysis | null> {
-  try {
-    const contents = [
-      ...history.slice(-3).map((m) => ({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }],
-      })),
-      {
-        role: "user",
-        parts: [{ text: userQuery }],
-      },
-    ];
+  const candidateModels = ["gemini-1.5-flash", "gemini-2.0-flash-exp", "gemini-3.5-flash"];
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+  for (const model of candidateModels) {
+    try {
+      const contents = [
+        ...history.slice(-3).map((m) => ({
+          role: m.role === "assistant" ? "model" : "user",
+          parts: [{ text: m.content }],
+        })),
+        {
+          role: "user",
+          parts: [{ text: userQuery }],
+        },
+      ];
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          contents,
-          systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-          generationConfig: {
-            responseMimeType: "application/json",
-            thinkingConfig: { thinkingBudget: 0 },
-          },
-        }),
-      },
-    );
-    clearTimeout(timeoutId);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
 
-    if (!response.ok) {
-      console.warn("Gemini API returned non-200 status:", response.status);
-      return null;
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            contents,
+            systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+            generationConfig: {
+              responseMimeType: "application/json",
+            },
+          }),
+        },
+      );
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        console.warn(`Gemini (${model}) returned non-200 status:`, response.status);
+        continue;
+      }
+
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) continue;
+
+      return JSON.parse(text) as AiAnalysis;
+    } catch (err) {
+      console.warn(`Gemini (${model}) API call failed:`, err);
     }
-
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) return null;
-
-    return JSON.parse(text) as AiAnalysis;
-  } catch (err) {
-    console.warn(
-      "Gemini API call bypassed, falling back to local NLU engine:",
-      err,
-    );
-    return null;
   }
+  return null;
 }
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  let activeProvider: "GROQ_LPU" | "GEMINI_FLASH" | "LOCAL_FALLBACK" =
-    "LOCAL_FALLBACK";
+  let activeProvider:
+    | "GROQ_LPU"
+    | "OPENROUTER_FREE"
+    | "HUGGINGFACE"
+    | "GEMINI_FLASH"
+    | "LOCAL_FALLBACK" = "LOCAL_FALLBACK";
 
   try {
     const currentUser = await getCurrentUser();
@@ -194,8 +326,9 @@ export async function POST(request: NextRequest) {
       if (profile?.favoritePosition) userRole = profile.favoritePosition;
     }
 
-    // 1. Try Groq LPU Engine (Primary Ultra-Fast ~500ms)
     let aiAnalysis: AiAnalysis | null = null;
+
+    // 1. Try Groq LPU Engine (Primary Ultra-Fast ~500ms)
     const groqKey = process.env.GROQ_API_KEY?.trim();
     if (groqKey) {
       aiAnalysis = await analyzeWithGroq(
@@ -206,7 +339,35 @@ export async function POST(request: NextRequest) {
       if (aiAnalysis) activeProvider = "GROQ_LPU";
     }
 
-    // 2. Try Gemini Engine (Secondary Fallback ~1.5s)
+    // 2. Try OpenRouter Free Tier (High Reliability Multi-Model ~1-2s)
+    if (!aiAnalysis) {
+      const openRouterKey = process.env.OPENROUTER_API_KEY?.trim();
+      if (openRouterKey) {
+        aiAnalysis = await analyzeWithOpenRouter(
+          lastUserMessage,
+          messages.slice(0, -1),
+          openRouterKey,
+        );
+        if (aiAnalysis) activeProvider = "OPENROUTER_FREE";
+      }
+    }
+
+    // 3. Try Hugging Face Router
+    if (!aiAnalysis) {
+      const hfKey =
+        process.env.HUGGINGFACE_API_KEY?.trim() ||
+        process.env.HUGGINFACE_API_KEY?.trim();
+      if (hfKey) {
+        aiAnalysis = await analyzeWithHuggingFace(
+          lastUserMessage,
+          messages.slice(0, -1),
+          hfKey,
+        );
+        if (aiAnalysis) activeProvider = "HUGGINGFACE";
+      }
+    }
+
+    // 4. Try Google Gemini Engine
     if (!aiAnalysis) {
       const geminiKey = process.env.GEMINI_API_KEY?.trim();
       if (geminiKey) {
