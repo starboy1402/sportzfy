@@ -83,7 +83,7 @@ async function analyzeWithGroq(
       },
       signal: controller.signal,
       body: JSON.stringify({
-        model: "qwen/qwen3.8-27b",
+        model: "llama-3.3-70b-versatile",
         messages,
         response_format: { type: "json_object" },
         temperature: 0.2,
@@ -117,10 +117,10 @@ async function analyzeWithOpenRouter(
   apiKey: string,
 ): Promise<AiAnalysis | null> {
   const freeModels = [
-    "nvidia/nemotron-3-ultra-550b-a55b:free",
+    "inclusionai/ling-3.2-flash:free",
     "dots-studio/dots-3-note-preview:free",
     "meta-llama/llama-3.2-3b-instruct:free",
-    "inclusionai/ling-3.2-flash:free",
+    "nvidia/nemotron-3-ultra-550b-a55b:free",
   ];
 
   const messages = [
@@ -244,7 +244,13 @@ async function analyzeWithGemini(
   history: Array<{ role: string; content: string }>,
   apiKey: string,
 ): Promise<AiAnalysis | null> {
-  const candidateModels = ["gemini-1.5-flash", "gemini-2.0-flash-exp", "gemini-3.5-flash"];
+  const candidateModels = [
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-3.6-flash",
+    "gemini-flash-latest",
+    "gemini-2.5-flash-lite",
+  ];
 
   for (const model of candidateModels) {
     try {
@@ -260,7 +266,7 @@ async function analyzeWithGemini(
       ];
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
 
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`,
