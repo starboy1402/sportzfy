@@ -1,0 +1,95 @@
+name: Sportzfy Continuous Integration (CI)
+
+on:
+  push:
+    branches: [ main, master, "feat/**" ]
+  pull_request:
+    branches: [ main, master ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web-ci:
+    name: 🌐 Web Platform CI (Next.js & Prisma)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sportzfy-web
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: sportzfy_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: "postgresql://postgres:password@localhost:5432/sportzfy_test?schema=public"
+      DATABASE_URL_UNPOOLED: "postgresql://postgres:password@localhost:5432/sportzfy_test?schema=public"
+      JWT_SECRET: "ci-test-jwt-secret-sportzfy-cuet"
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: sportzfy-web/package-lock.json
+
+      - name: 📦 Install Web Dependencies
+        run: npm ci
+
+      - name: 💎 Generate Prisma Client
+        run: npx prisma generate
+
+      - name: 🗄️ Setup Test Database Schema & Seed Data
+        run: |
+          npx prisma db push --skip-generate
+          npx tsx prisma/seed.ts
+
+      - name: 🧪 Run Automated Tests (Auth, Pricing, Bookings, RBAC)
+        run: npm test
+
+      - name: ⚡ Run Concurrency & Race Condition Verification
+        run: npm run test:concurrency
+
+      - name: 🏗️ Verify Next.js Production Build
+        run: npx next build
+
+  mobile-ci:
+    name: 📱 Mobile App CI (React Native & Expo SDK 58)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: SPORTZFY-main
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: SPORTZFY-main/package-lock.json
+
+      - name: 📦 Install Mobile Dependencies
+        run: npm ci
+
+      - name: 📱 Verify Cross-Platform Expo Bundle Export (Web, Android, iOS)
+        run: npx expo export --dump-sourcemap=false --no-minify

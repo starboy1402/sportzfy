@@ -23,20 +23,27 @@ import HeroGlobalSearch from "@/components/HeroGlobalSearch";
 export const revalidate = 60; // Instant cached load with 60s background revalidation (ISR)
 
 export default async function HomePage() {
-  // Fetch real seeded turfs from database
-  const turfs = await prisma.turf.findMany({
-    where: { status: "APPROVED" },
-    include: { images: { orderBy: { order: "asc" } } },
-    orderBy: { rating: "desc" },
-  });
+  let turfs: any[] = [];
+  let matchPosts: any[] = [];
 
-  // Fetch open matchmaking posts
-  const matchPosts = await prisma.matchPost.findMany({
-    where: { status: "OPEN" },
-    include: { turf: true, hostUser: true },
-    take: 2,
-    orderBy: { createdAt: "desc" },
-  });
+  try {
+    // Fetch real seeded turfs from database
+    turfs = await prisma.turf.findMany({
+      where: { status: "APPROVED" },
+      include: { images: { orderBy: { order: "asc" } } },
+      orderBy: { rating: "desc" },
+    });
+
+    // Fetch open matchmaking posts
+    matchPosts = await prisma.matchPost.findMany({
+      where: { status: "OPEN" },
+      include: { turf: true, hostUser: true },
+      take: 2,
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (err: any) {
+    console.warn("[HomePage] DB offline or not configured during build:", err?.message || err);
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--color-paper)]">
