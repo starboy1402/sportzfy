@@ -1,7 +1,7 @@
 # Dependencies
 node_modules/
 sportzfy-web/node_modules/
-SPORTZFY-main/node_modules/
+sportzfy-app/node_modules/
 
 # Next.js build output
 .next/
